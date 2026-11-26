@@ -117,6 +117,21 @@ input[type=time],.prow input,#newname,#whoname{font:16px Barlow,sans-serif;min-h
 .who[hidden]{display:none}
 .who h2{margin:0}.who .row{justify-content:center}.who .row button{min-width:110px;font-size:18px}
 .who .new{display:grid;gap:8px;max-width:340px;margin:0 auto;width:100%}
+.fin{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:4px 16px 14px;margin-top:14px}
+.fin[hidden],.fin [hidden]{display:none}
+.fin h2{margin-top:14px}
+.fbl{list-style:none;margin:0;padding:0}
+.fbl li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.fbl li>span:first-child{display:flex;flex-direction:column;line-height:1.25}.fbl small{color:var(--mut);font-size:13px}
+.fbl .row{gap:4px;flex-wrap:nowrap}.fbl button{min-height:38px;padding:0 9px;font-size:14px}.fbl button[aria-pressed=true]{background:var(--red);border-color:var(--red);color:#fff}
+.phprev{display:block;max-width:160px;border-radius:12px;margin:8px 0}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.gal button{padding:0;height:auto;overflow:hidden;display:flex;flex-direction:column;font-size:13px;font-weight:400;color:var(--mut)}
+.gal img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.pv{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.92);display:grid;grid-template-rows:minmax(0,1fr) auto;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
+.pv[hidden]{display:none}.pv img{width:100%;height:100%;object-fit:contain}
+.pv .row{justify-content:space-between;color:#eee;padding-top:10px}
+.gate{z-index:10}.gate .acform{max-width:340px;margin:0 auto;width:100%}.gate p{margin:0}
 @media(max-width:600px){.prow{grid-template-columns:minmax(0,1fr) auto}.prow select{grid-column:1/-1;grid-row:2}}
 @media(max-width:600px){.body{grid-template-columns:110px minmax(0,1fr);gap:12px;padding:14px}.ring .t{font-size:34px}.ctl{padding:0 14px 14px}}
 @media(prefers-reduced-motion:reduce){.bar i{transition:none}}
@@ -166,6 +181,15 @@ input[type=time],.prow input,#newname,#whoname{font:16px Barlow,sans-serif;min-h
     <div class="ask" id="ask" hidden><p id="askq"></p><div class="row" id="askb"></div></div>
   </section>
 
+  <section class="fin" id="after" hidden aria-label="Antrenman sonu">
+    <div id="fbw"><h2>Nasıl geçti?</h2><p class="next">İstersen işaretle, sonraki sefer sayılar buna göre ayarlanır. Boş bırakırsan değişmez.</p><ul class="fbl" id="fbl"></ul></div>
+    <div id="phbox"><h2>Fotoğraf (isteğe bağlı)</h2>
+      <p class="next">Antrenman sonrası halini kaydet, zamanla farkı gör. Sadece senin hesabında durur, kimse göremez; konum gibi gizli bilgiler silinir.</p>
+      <div class="row"><label class="file">Fotoğraf seç<input type="file" id="phin" accept="image/*"></label><button id="phsave" class="wide" hidden style="width:auto">Kaydet</button></div>
+      <img class="phprev" id="phprev" alt="Seçilen fotoğraf" hidden><p class="next" id="phmsg"></p></div>
+    <div class="row"><button id="afterx">Kapat</button></div>
+  </section>
+
   <h2>Bugünün planı</h2>
   <ol class="plan" id="plan"></ol>
 
@@ -174,6 +198,10 @@ input[type=time],.prow input,#newname,#whoname{font:16px Barlow,sans-serif;min-h
   <h2>İlerleme</h2>
   <div class="kpi" id="kpi"></div>
   <div class="weeks" id="weeks" aria-label="Son 8 hafta"></div>
+
+  <div id="galw" hidden><h2>Fotoğraflar</h2>
+  <p class="next">Sadece sen görebilirsin. Fotoğraflar telefona kaydedilmez, açınca hesabından gelir.</p>
+  <div class="gal" id="gal"></div><p class="next" id="galmsg"></p><button id="galmore" hidden>Daha fazla</button></div>
 
   <h2>Geçmiş</h2>
   <ul class="log" id="log"></ul>
@@ -202,7 +230,7 @@ input[type=time],.prow input,#newname,#whoname{font:16px Barlow,sans-serif;min-h
       <div class="row"><button id="acsyncnow">Şimdi eşitle</button><button id="aclogout">Çıkış yap</button><button id="acdel">Hesabı sil</button></div>
     </div>
     <p class="next" id="acstat"></p>
-    <p class="next">Gizlilik: Hesap açarsan sadece e-posta adresin ile antrenman kayıtların ve ayarların Google Firebase'de (Avrupa) saklanır. Bu kayıtları yalnızca sen görebilirsin, başkasıyla paylaşılmaz. Reklam ya da analiz için kullanılmaz. Hesabı sil düğmesi buluttaki her şeyi kalıcı olarak siler.</p>
+    <p class="next">Gizlilik: E-posta adresin, antrenman kayıtların, ayarların ve eklediğin fotoğraflar Google Firebase'de (Avrupa) saklanır. Bunları yalnızca sen görebilirsin, başkasıyla paylaşılmaz; fotoğraflar telefona kaydedilmez ve yedek dosyasına girmez. Reklam ya da analiz için kullanılmaz. Hesabı sil düğmesi fotoğraflar dahil buluttaki her şeyi kalıcı olarak siler. Başka bir hesapla giriş yapılırsa bu cihazdaki kayıtlar yeni hesaba karışmaz.</p>
   </details>
   <details><summary>Profiller</summary>
     <div id="profs"></div>
@@ -238,6 +266,19 @@ input[type=time],.prow input,#newname,#whoname{font:16px Barlow,sans-serif;min-h
   <h2>Kim antrenman yapacak?</h2>
   <div class="row" id="whob"></div>
   <div class="new"><p class="next">ya da yeni profil:</p><input id="whoname" placeholder="Adın" maxlength="20" aria-label="Ad"><select id="whotpl" aria-label="Program"></select><button id="whogo">Oluştur</button></div>
+</div>
+<div class="pv" id="pv" hidden role="dialog" aria-label="Fotoğraf"><img id="pvimg" alt=""><div class="row"><span id="pvt"></span><span class="row"><button id="pvdel">Sil</button><button id="pvx">Kapat</button></span></div></div>
+<div class="who gate" id="gate" hidden role="dialog" aria-label="Giriş">
+  <h2>Antrenman</h2>
+  <p class="next">Devam etmek için giriş yap. Kayıtların ve fotoğrafların sadece senin hesabında durur.</p>
+  <div class="acform">
+    <button id="gg" class="wide">Google ile giriş</button>
+    <p class="next">ya da e-posta ile:</p>
+    <input id="gmail" type="email" autocomplete="email" placeholder="E-posta" aria-label="E-posta">
+    <input id="gpass" type="password" autocomplete="current-password" placeholder="Şifre (en az 6 karakter)" aria-label="Şifre">
+    <div class="row" style="justify-content:center"><button id="glogin">Giriş yap</button><button id="gsign">Hesap aç</button><button id="greset">Şifremi unuttum</button></div>
+  </div>
+  <p class="next" id="gmsg" aria-live="polite"></p>
 </div>
 <script src="config.js"></script>
 <script src="sync.js"></script>

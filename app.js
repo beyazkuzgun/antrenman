@@ -87,10 +87,17 @@ function pullText(emom) {
   if (emom) return l === 0 ? '3 negatif' : l === 1 ? '1 tam + 2 negatif' : (l - 1) + '–' + l + ' tam';
   return l === 0 ? '5 negatif' : l < 5 ? l + ' tam + ' + (5 - l) + ' negatif' : l + ' tam';
 }
+/* zorluk geri bildirimi: S.adj[hareket] = seviye (-3..+4), her seviye ~%15 */
+const FIXED = ['Isınma', 'Soğuma', 'Ayak bileği'];
+const tunable = (id, grp) => !FIXED.includes(grp) && EX[id] && !EX[id].track && !['shadow', 'bag'].includes(id);
+const lvl = id => (S.adj && S.adj[id]) || 0;
+const scaleReps = (r, L) => !L || !/tekrar|dokunuş|sn tut|^\d+ \+ \d+$/.test(r) || /dinlen/.test(r) ? r : r.replace(/\d+/g, n => Math.max(1, Math.round(n * (1 + .15 * L))));
+const scaleSec = (v, L) => L ? Math.max(10, Math.round(v * (1 + .15 * L) / 5) * 5) : v;
 function mk(it, grp, emom) {
   if (it.rest) return { k: 'rest', name: 'Dinlen', sec: it.rest, grp };
   const id = pick(it); if (!avail(id)) return null;
   const x = EX[id], kb = x.eq === 'kb' ? ' · ' + S.cfg.kbw + ' kg' : '';
+  if (tunable(id, grp)) { const L = lvl(id); if (L) { it = { ...it }; if (it.reps) it.reps = scaleReps(it.reps, L); if (it.sec && !it.note) it.sec = scaleSec(it.sec, L) } }
   const s = { id, name: x.name + (it.side ? ' (' + it.side + ')' : ''), tip: x.tip, grp };
   if (emom) return { ...s, k: 'emom', sec: 60, det: (x.track === 'pull' ? pullText(true) : it.reps) + kb };
   if (it.sec) return { ...s, k: 'time', sec: it.sec, det: (it.note || it.sec + ' sn') + kb };
@@ -142,7 +149,7 @@ const spoken = s => s.replace(/–/g, ' ile ').replace(/\+/g, ' artı ').replace
 async function wake(on) { try { if (on && !lock && navigator.wakeLock) lock = await navigator.wakeLock.request('screen'); if (!on && lock) { lock.release(); lock = null } } catch (e) {} }
 
 /* ---------- oturum ---------- */
-let short = false, week = getWeek(), day = nextDay(), steps = [], i = -1, left = 0, total = 0, end = 0, remain = 0, timer = null, paused = false, skipped = new Set(), pulls = [], doneMsg = '', started = 0;
+let short = false, lastT = 0, week = getWeek(), day = nextDay(), steps = [], i = -1, left = 0, total = 0, end = 0, remain = 0, timer = null, paused = false, skipped = new Set(), pulls = [], doneMsg = '', started = 0;
 const fmt = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 const running = () => i >= 0 && i < steps.length;
 
@@ -165,7 +172,7 @@ function header() {
 function plan() {
   $('plan').innerHTML = steps.map((s, j) => '<li data-j="' + j + '" class="' + (s.k === 'rest' ? 'rs ' : '') + (j < i ? 'done' : j === i ? 'cur' : '') + '"><span class="n">' + (j + 1) + '</span><span>' + esc(s.name) + ' <span class="next">· ' + esc(s.grp) + '</span>' + (skipped.has(j) ? ' <span class="x">atlandı</span>' : '') + '</span><span class="v">' + esc(s.k === 'work' ? s.det : fmt(s.sec)) + '</span></li>').join('');
 }
-function load() { stop(); week = getWeek(); if (!dayOk(day)) day = nextDay(); steps = build(day, week, short); i = -1; paused = false; skipped = new Set(); pulls = []; doneMsg = ''; started = 0; hideAsk(); show(); header(); settings(); library(); stats(); resumeBar() }
+function load() { stop(); week = getWeek(); if (!dayOk(day)) day = nextDay(); steps = build(day, week, short); i = -1; paused = false; skipped = new Set(); pulls = []; doneMsg = ''; started = 0; hideAsk(); $('after').hidden = true; show(); header(); settings(); library(); stats(); resumeBar() }
 function set(ph, cls, nm, dt, tp, af) { $('ph').textContent = ph; $('ph').className = 'phase' + (cls ? ' ' + cls : ''); $('nm').textContent = nm; $('dt').textContent = dt; $('tp').textContent = tp; $('af').textContent = af }
 function show() {
   const s = steps[i]; $('pb').style.width = (i < 0 ? 0 : Math.min(100, i / steps.length * 100)) + '%';
@@ -237,6 +244,7 @@ function finish() {
   const min = Math.max(1, Math.round((Date.now() - (started || Date.now())) / 60000));
   S.hist.unshift({ d: day, w: week, q: short || undefined, t: Date.now(), min, sk, ns: n, ok: n / work <= .25, pu: pulls.length ? pulls : undefined, lv: PR.pull ? S.pull.L : undefined });
   S.hist = S.hist.slice(0, 500); save(); clearSess();
+  lastT = S.hist[0].t; afterCard([...new Set(steps.filter((x, j) => !skipped.has(j) && x.k !== 'rest' && tunable(x.id, x.grp)).map(x => x.id))]);
   doneMsg = (doneMsg ? doneMsg + ' ' : '') + min + ' dakika sürdü.';
   beep(880, 300); setTimeout(() => beep(1100, 500), 320); vib([80, 60, 160]); say('Antrenman tamam. Eline sağlık.'); wake(false);
 }
@@ -256,7 +264,7 @@ $('resno').onclick = () => { clearSess(); $('resume').hidden = true };
 /* ---------- geçmiş ve istatistik ---------- */
 let delArm = -1;
 function renderLog() {
-  $('log').innerHTML = S.hist.length ? S.hist.slice(0, 30).map((h, k) => '<li><span>' + new Date(h.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'short' }) + ' — ' + esc(P.DAYS[h.d] ? (P.DAYS[h.d].extra ? P.DAYS[h.d].title : h.d + ' günü') : h.d) + ', hafta ' + h.w + (h.q ? ', kısa' : '') + (h.min ? ', ' + h.min + ' dk' : '') + (h.pu ? ', barfiks: ' + h.pu.join('-') : '') + (h.ns ? ', ' + h.ns + ' hareket atlandı' : '') + (h.ok === false ? ' (haftaya sayılmadı)' : '') + '</span><button class="del" data-k="' + k + '">' + (delArm === k ? 'Silinsin mi?' : 'Sil') + '</button></li>').join('') : '<li><span>Henüz kayıt yok. İlk antrenmanı bitirince burada görünür.</span></li>';
+  $('log').innerHTML = S.hist.length ? S.hist.slice(0, 30).map((h, k) => '<li><span>' + new Date(h.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'short' }) + ' — ' + esc(P.DAYS[h.d] ? (P.DAYS[h.d].extra ? P.DAYS[h.d].title : h.d + ' günü') : h.d) + ', hafta ' + h.w + (h.q ? ', kısa' : '') + (h.min ? ', ' + h.min + ' dk' : '') + (h.pu ? ', barfiks: ' + h.pu.join('-') : '') + (h.ns ? ', ' + h.ns + ' hareket atlandı' : '') + (h.ph ? ', 📷' : '') + (h.ok === false ? ' (haftaya sayılmadı)' : '') + '</span><button class="del" data-k="' + k + '">' + (delArm === k ? 'Silinsin mi?' : 'Sil') + '</button></li>').join('') : '<li><span>Henüz kayıt yok. İlk antrenmanı bitirince burada görünür.</span></li>';
 }
 $('log').addEventListener('click', e => {
   const b = e.target.closest('button.del'); if (!b) return; const k = +b.dataset.k;
@@ -331,7 +339,7 @@ $('remgo').onclick = () => {
 };
 
 /* ---------- profil yönetimi ---------- */
-function switchTo(id) { stop(); wake(false); pid = id; PR = P.TEMPLATES[me().tpl]; write('antrenman.profile', pid); S = loadState(); write(KEY(), S); day = nextDay(); renderLog(); load() }
+function switchTo(id) { stop(); wake(false); pid = id; gal = null; PR = P.TEMPLATES[me().tpl]; write('antrenman.profile', pid); S = loadState(); write(KEY(), S); day = nextDay(); renderLog(); load() }
 let swArm = 0; function confirmSwitch() { if (Date.now() - swArm < 4000) return true; swArm = Date.now(); $('alert').textContent = 'Antrenman sürüyor. Değiştirmek için tekrar bas, yarım kalan antrenman kaydedildi.'; return false }
 $('prof').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.dataset.p === pid) return; if (running() && !confirmSwitch()) return; switchTo(b.dataset.p) });
 $('profs').addEventListener('change', e => {
@@ -342,7 +350,7 @@ $('profs').addEventListener('change', e => {
 $('profs').addEventListener('click', e => {
   const b = e.target.closest('button[data-rm]'); if (!b) return; const id = b.dataset.rm;
   if (rmArm !== id) { rmArm = id; settings(); return }
-  rmArm = ''; write('antrenman.delp', read('antrenman.delp', []).concat(id)); PROFS = PROFS.filter(p => p.id !== id); saveProfs(); drop('antrenman.v2.' + id); drop('antrenman.sess.' + id);
+  rmArm = ''; write('antrenman.delp', read('antrenman.delp', []).concat(id)); PROFS = PROFS.filter(p => p.id !== id); saveProfs(); if (SY.enabled && SY.user()) SY.wipePhotos(id).catch(() => {}); drop('antrenman.v2.' + id); drop('antrenman.sess.' + id);
   if (pid === id) switchTo(PROFS[0].id); else { header(); settings() }
 });
 function addProfile(name, tpl) { const id = 'p' + Date.now().toString(36); PROFS.push({ id, name: name.trim().slice(0, 20), tpl }); saveProfs(); switchTo(id) }
@@ -365,6 +373,78 @@ $('bdl').onclick = () => { try { const a = document.createElement('a'); a.href =
 $('bcp').onclick = async () => { try { await navigator.clipboard.writeText(dump()); $('bmsg').textContent = 'Yedek panoya kopyalandı. Notlar\'a ya da kendine e-postaya yapıştır.' } catch (e) { $('btx').value = dump(); $('bmsg').textContent = 'Kopyalanamadı. Yedek aşağıdaki kutuda, elle seçip kopyala.' } };
 $('bfile').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(restore) };
 $('bld').onclick = () => restore($('btx').value);
+
+/* ---------- antrenman sonu: zorluk + fotoğraf ---------- */
+let fbBase = {}, pick1 = null;
+const FB = [[1, 'Kolay'], [0, 'İyi'], [-1, 'Zor']];
+const nextVal = id => { const st = build(day, week, false).find(x => x.id === id && tunable(x.id, x.grp)); return st ? (st.k === 'work' || st.k === 'emom' ? st.det : fmt(st.sec)) : '' };
+function afterCard(ids) {
+  fbBase = {}; ids.forEach(id => fbBase[id] = lvl(id)); pick1 = null;
+  $('fbl').innerHTML = ids.map(id => '<li data-id="' + id + '"><span><b>' + esc(EX[id].name) + '</b><small></small></span><span class="row">' + FB.map(([d, t]) => '<button data-d="' + d + '" aria-pressed="false">' + t + '</button>').join('') + '</span></li>').join('');
+  $('fbw').hidden = !ids.length; fbRefresh();
+  $('phprev').hidden = true; $('phsave').hidden = true; $('phmsg').textContent = ''; $('phin').value = '';
+  $('phbox').hidden = !SY.enabled;
+  $('after').hidden = false;
+}
+function fbRefresh() { $('fbl').querySelectorAll('li').forEach(li => { const id = li.dataset.id, d = lvl(id) - fbBase[id]; li.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.d === d && (d !== 0 || li.dataset.set === '1'))); li.querySelector('small').textContent = 'Sonraki sefer: ' + nextVal(id) }) }
+$('fbl').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return; const li = b.closest('li'), id = li.dataset.id;
+  S.adj = S.adj || {}; const v = Math.max(-3, Math.min(4, fbBase[id] + +b.dataset.d)); if (v) S.adj[id] = v; else delete S.adj[id];
+  li.dataset.set = '1'; save(); fbRefresh();
+});
+/* fotoğraf: tarayıcıda yeniden çizilir (konum ve cihaz bilgisi gibi gizli veriler silinir), küçültülür */
+function shrink(file, edge, max) {
+  return new Promise((ok, no) => {
+    const u = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(u); const k = Math.min(1, edge / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas');
+      c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      for (let q = .82; q > .3; q -= .1) { const d = c.toDataURL('image/jpeg', q); if (d.length < max) return ok(d) }
+      no(new Error('Fotoğraf çok büyük.'));
+    };
+    im.onerror = () => { URL.revokeObjectURL(u); no(new Error('Bu dosya açılamadı.')) }; im.src = u;
+  });
+}
+$('phin').onchange = async () => {
+  const f = $('phin').files[0]; if (!f) return; $('phmsg').textContent = 'Hazırlanıyor…';
+  try { pick1 = { full: await shrink(f, 1280, 850000), th: await shrink(f, 320, 70000) }; $('phprev').src = pick1.th; $('phprev').hidden = false; $('phsave').hidden = false; $('phmsg').textContent = 'Kaydedince sadece sen görebilirsin.' }
+  catch (e) { pick1 = null; $('phmsg').textContent = e.message }
+};
+$('phsave').onclick = async () => {
+  if (!pick1) return; if (!SY.user()) { $('phmsg').textContent = 'Fotoğraf için giriş yapman gerekiyor.'; return }
+  $('phsave').disabled = true; $('phmsg').textContent = 'Kaydediliyor…'; const slow = setTimeout(() => $('phmsg').textContent = 'İnternet bekleniyor, uygulamayı kapatma…', 15000);
+  try { await SY.addPhoto(lastT, pid, pick1.th, pick1.full); const h = S.hist.find(x => x.t === lastT); if (h) { h.ph = true; save(); renderLog() } pick1 = null; gal = null; $('phsave').hidden = true; $('phmsg').textContent = 'Fotoğraf kaydedildi. İlerleme sekmesinde görürsün.' }
+  catch (e) { $('phmsg').textContent = 'Kaydedilemedi: ' + SY.msg(e) }
+  clearTimeout(slow); $('phsave').disabled = false;
+};
+$('afterx').onclick = () => { $('after').hidden = true };
+
+/* galeri (İlerleme sekmesi) — fotoğraflar cihaza kaydedilmez, açılınca hesaptan okunur */
+let gal = null, galShow = 12, pvId = '', pvArm = 0;
+async function gallery() {
+  if (!SY.enabled) { $('galw').hidden = true; return }
+  $('galw').hidden = false;
+  if (!SY.user()) { $('gal').innerHTML = ''; $('galmsg').textContent = 'Giriş yapınca fotoğrafların burada görünür.'; return }
+  if (!gal) { $('galmsg').textContent = 'Yükleniyor…'; try { gal = await SY.listPhotos(pid) } catch (e) { $('galmsg').textContent = 'Fotoğraflar açılamadı: ' + SY.msg(e); return } }
+  const day = t => new Date(t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: '2-digit' });
+  $('gal').innerHTML = gal.slice(0, galShow).map(x => '<button data-id="' + esc(x.id) + '"><img alt="" src="' + esc(x.th) + '"><span>' + day(x.t) + '</span></button>').join('');
+  $('galmsg').textContent = gal.length ? (gal.length > galShow ? '' : gal.length + ' fotoğraf.') : 'Henüz fotoğraf yok. Antrenman bitince ekleyebilirsin.';
+  $('galmore').hidden = gal.length <= galShow;
+}
+$('galmore').onclick = () => { galShow += 12; gallery() };
+$('gal').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return; const x = gal.find(g => g.id === b.dataset.id); if (!x) return;
+  pvId = x.id; pvArm = 0; $('pvdel').textContent = 'Sil'; $('pvimg').src = x.th; $('pvt').textContent = new Date(x.t).toLocaleString('tr-TR', { dateStyle: 'long', timeStyle: 'short' }); $('pv').hidden = false;
+  try { const full = await SY.fullPhoto(x.id); if (full && pvId === x.id) $('pvimg').src = full } catch (e) {}
+});
+const pvClose = () => { $('pv').hidden = true; $('pvimg').removeAttribute('src'); pvId = '' };
+$('pvx').onclick = pvClose;
+$('pvdel').onclick = async () => {
+  if (Date.now() - pvArm > 4000) { pvArm = Date.now(); $('pvdel').textContent = 'Kalıcı silinsin mi? Tekrar bas'; return }
+  const id = pvId, x = gal.find(g => g.id === id); $('pvdel').textContent = 'Siliniyor…';
+  try { await SY.delPhoto(id); gal = gal.filter(g => g.id !== id); if (x && !gal.some(g => g.t === x.t)) { const h = S.hist.find(h => h.t === x.t); if (h) { delete h.ph; save(); renderLog() } } pvClose(); gallery() }
+  catch (e) { $('pvdel').textContent = 'Silinemedi: ' + SY.msg(e) }
+};
 
 /* ---------- düğmeler ---------- */
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (running() && !confirmSwitch()) return; day = b.dataset.d; load() });
@@ -403,7 +483,7 @@ function showView(v, push) {
   document.querySelectorAll('.view').forEach(x => x.hidden = x.dataset.v !== v);
   document.querySelectorAll('#tabbar button').forEach(b => b.dataset.v === v ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   if (push && location.hash !== '#' + v) history.replaceState(null, '', '#' + v);
-  write('antrenman.view', v); window.scrollTo(0, 0);
+  write('antrenman.view', v); window.scrollTo(0, 0); if (v === 'ilerleme') gallery();
 }
 $('tabbar').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showView(b.dataset.v, true) });
 window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
@@ -428,12 +508,12 @@ function applySnap(m) {
   write('antrenman.delp', m.delp); PROFS = m.profiles; write('antrenman.profiles', PROFS);
   for (const id in m.states) write('antrenman.v2.' + id, m.states[id]);
   if (!PROFS.find(x => x.id === pid)) pid = PROFS[0].id;
-  if (!running()) { PR = P.TEMPLATES[me().tpl]; write('antrenman.profile', pid); S = loadState(); day = nextDay(); renderLog(); load() } else { const st = m.states[pid]; if (st) S.hist = st.hist; header() }
+  if (!running() && $('after').hidden) { PR = P.TEMPLATES[me().tpl]; write('antrenman.profile', pid); S = loadState(); day = nextDay(); renderLog(); load() } else { const st = m.states[pid]; if (st) S.hist = st.hist; header() }
 }
 function cloud() { if (!SY.enabled || syncing || !SY.user()) return; acct('Kaydediliyor…'); SY.push(snapshot, e => { if (e) acct('Buluta yazılamadı: ' + SY.msg(e)); else { lastSync = Date.now(); acct() } }) }
 async function fullSync() {
   if (!SY.user()) return; syncing = true; acct('Eşitleniyor…');
-  try { const r = await SY.pull(), m = merge(snapshot(), r); applySnap(m); await SY.pushNow(m); lastSync = Date.now(); acct() }
+  try { const r = await SY.pull(), fresh = read('antrenman.fresh', false), m = fresh && r ? merge({ ...r, delp: r.delp || [], states: r.states || {} }, null) : merge(snapshot(), r); drop('antrenman.fresh'); applySnap(m); await SY.pushNow(m); lastSync = Date.now(); acct() }
   catch (e) { acct('Eşitleme olmadı: ' + SY.msg(e)) }
   syncing = false;
 }
@@ -445,22 +525,42 @@ function acct(status) {
   $('acstat').textContent = status || (u ? (lastSync ? 'Son eşitleme ' + new Date(lastSync).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) + '. Kayıtlar bu hesaba bağlı her cihazda.' : '') : 'Giriş yapınca kayıtların buluta yedeklenir ve diğer cihazlarla eşitlenir.');
   $('acbadge').textContent = u ? '☁ ' + (u.email || 'bulut') : 'Giriş yapılmadı';
 }
+/* zorunlu giriş: hesap yoksa uygulama açılmaz. Cihazda başka bir hesabın kayıtları varsa yeni hesaba karışmaz, silinir. */
+const gate = on => { $('gate').hidden = !on; if (on) $('who').hidden = true };
+const gmsg = t => { $('gmsg').textContent = t || '' };
+function wipeLocal() { try { Object.keys(localStorage).filter(k => /^(antrenman\.|ant_)/.test(k)).forEach(k => localStorage.removeItem(k)) } catch (e) {} }
+let whoDone = false;
 if (SY.enabled) {
-  SY.onUser(u => { acct(); if (u) fullSync() });
-  SY.init().catch(() => acct('Hesap servisine ulaşılamadı. İnternet bağlantını kontrol et.'));
+  if (!read('antrenman.uid', null)) { gate(true); gmsg('Bağlanıyor…') }
+  SY.onUser(u => {
+    if (u) {
+      const own = read('antrenman.owner', null);
+      if (own && own !== u.uid) { wipeLocal(); write('antrenman.owner', u.uid); write('antrenman.uid', u.uid); write('antrenman.fresh', true); location.reload(); return }
+      write('antrenman.owner', u.uid); write('antrenman.uid', u.uid); gate(false); gmsg();
+      if (firstRun && !whoDone) { whoDone = true; who() }
+      fullSync();
+    } else { drop('antrenman.uid'); gal = null; pvClose(); gate(true); gmsg() }
+    acct();
+  });
+  SY.init().catch(() => { acct('Hesap servisine ulaşılamadı. İnternet bağlantını kontrol et.'); gmsg(read('antrenman.uid', null) ? '' : 'İlk giriş için internet bağlantısı gerekiyor.') });
+  const gm = () => $('gmail').value, gp = () => $('gpass').value, runG = (f, ok) => { gmsg('Bekle…'); f().then(() => ok && gmsg(ok)).catch(e => gmsg(SY.msg(e))) };
+  $('gg').onclick = () => runG(() => SY.google());
+  $('glogin').onclick = () => runG(() => SY.login(gm(), gp()));
+  $('gsign').onclick = () => runG(() => SY.signup(gm(), gp()));
+  $('greset').onclick = () => { if (!gm().trim()) { gmsg('Önce e-postanı yaz.'); return } runG(() => SY.reset(gm()), 'Şifre sıfırlama bağlantısı e-postana gönderildi.') };
   const em = () => $('acmail').value, pw = () => $('acpass').value, run = (f, ok) => { acct('Bekle…'); f().then(() => ok && acct(ok)).catch(e => acct(SY.msg(e))) };
   $('acg').onclick = () => run(() => SY.google());
   $('aclogin').onclick = () => run(() => SY.login(em(), pw()));
   $('acsign').onclick = () => run(() => SY.signup(em(), pw()), 'Hesap açıldı.');
   $('acreset').onclick = () => { if (!em().trim()) { acct('Önce e-postanı yaz.'); return } run(() => SY.reset(em()), 'Şifre sıfırlama bağlantısı e-postana gönderildi.') };
-  $('aclogout').onclick = () => run(() => SY.logout(), 'Çıkış yapıldı. Kayıtlar bu cihazda kalmaya devam ediyor.');
+  $('aclogout').onclick = () => run(async () => { try { await SY.pushNow(snapshot()) } catch (e) {} return SY.logout() }, 'Çıkış yapıldı.');
   $('acsyncnow').onclick = () => fullSync();
   let rmA = 0; $('acdel').onclick = () => { if (Date.now() - rmA > 4000) { rmA = Date.now(); $('acdel').textContent = 'Emin misin? Tekrar bas'; return } run(() => SY.remove(), 'Hesap ve buluttaki kayıtlar silindi. Bu cihazdaki kayıtlar duruyor.'); $('acdel').textContent = 'Hesabı sil' };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && SY.user() && !running() && Date.now() - lastSync > 60e3) fullSync() });
 }
 acct();
 
-renderLog(); load(); if (firstRun) who();
+renderLog(); load(); if (firstRun && (!SY.enabled || read('antrenman.uid', null))) { whoDone = true; who() }
 try {
   if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude|claudeusercontent/.test(location.host)) navigator.serviceWorker.register('sw.js').then(reg => {
     reg.addEventListener('updatefound', () => { const n = reg.installing; n && n.addEventListener('statechange', () => { if (n.state === 'activated' && navigator.serviceWorker.controller) $('upd').hidden = false }) });

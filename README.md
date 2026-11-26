@@ -33,6 +33,9 @@ GitHub Pages: Settings → Pages → Branch: `main`, klasör `/ (root)`. Adres: 
 ## Özellikler
 
 - Profiller: kişi ekle, adlandır, sil; her profil bir şablon (program) kullanır. İlk açılışta "Kim antrenman yapacak?" sorulur.
+- Giriş zorunlu (Google ya da e-posta).
+- Antrenman sonu "Nasıl geçti?": hareket başına Kolay / İyi / Zor; sonraki seferin sayıları ~%15 artar ya da azalır.
+- Antrenman sonu isteğe bağlı fotoğraf: küçültülür, konum/cihaz bilgisi silinir, sadece hesabında durur (İlerleme → Fotoğraflar). Profil ya da hesap silinince fotoğraflar da silinir.
 - "Vaktim az" düğmesi: devre/dakika sayısı yarıya iner, ısınma ve ayak bileği rutini aynı kalır, soğuma kısalır; sırayı ilerletir, haftaya yarım sayılır.
 - Yarım kalan antrenman 6 saat içinde kaldığı adımdan devam ettirilebilir.
 - İstatistik: bu hafta, toplam, süre, seri, son 8 hafta; barfiks seviyesi ve en iyisi.
@@ -41,7 +44,7 @@ GitHub Pages: Settings → Pages → Branch: `main`, klasör `/ (root)`. Adres: 
 ## Hesap ve eşitleme
 
 Firebase projesi: `antrenman-60c3b` (Auth: Google + e-posta/şifre, Firestore `eur3`). Ayarlar `config.js` içinde.
-Her kullanıcının verisi `users/{uid}` belgesinde durur; kural: kişi sadece kendi belgesini okur/yazar.
+Her kullanıcının verisi `users/{uid}` belgesinde, fotoğrafları altındaki `photos` koleksiyonunda durur; kurallar `firestore.rules` dosyasında (kişi sadece kendi verisini okur/yazar, fotoğraf boyutu sınırlı).
 Giriş yapınca cihazdaki profiller ve geçmiş buluttakiyle birleştirilir (antrenmanlar zamana göre birleşir, silinenler geri gelmez).
 
 ## Kayıtlar

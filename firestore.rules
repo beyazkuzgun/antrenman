@@ -1,0 +1,32 @@
+rules_version = '2';
+// Antrenman — Firestore güvenlik kuralları. Firebase konsolu → Firestore → Kurallar bölümüne yapıştırılır.
+// Herkes sadece kendi belgelerini görür; başka hiçbir yol açık değil.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function me(uid) { return request.auth != null && request.auth.uid == uid; }
+
+    match /users/{uid} {
+      allow read, write: if me(uid);
+
+      match /photos/{id} {
+        allow read, delete: if me(uid);
+        allow create: if me(uid)
+          && request.resource.data.keys().hasOnly(['t', 'p', 'th', 'at'])
+          && request.resource.data.t is int
+          && request.resource.data.p is string && request.resource.data.p.size() < 40
+          && request.resource.data.th is string && request.resource.data.th.size() < 80000;
+        allow update: if false;
+
+        match /full/{f} {
+          allow read, delete: if me(uid);
+          allow create: if me(uid) && f == 'img'
+            && request.resource.data.keys().hasOnly(['img'])
+            && request.resource.data.img is string && request.resource.data.img.size() < 900000;
+          allow update: if false;
+        }
+      }
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
