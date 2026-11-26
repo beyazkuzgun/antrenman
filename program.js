@@ -165,18 +165,19 @@ const DAYS = {
       { ex: 'squat', reps: '12 tekrar' }, { ex: 'kneepush', reps: '8 tekrar' }, { ex: 'bridge2', reps: '15 tekrar' }, { ex: 'hollowk', reps: '25 sn tut' }] }] }
 };
 
-/* PROFILLER — her kişinin kendi günleri, sırası, ekipmanı, kuralları ve kayıtları var.
-   rotation: haftalık sıra (uzunluğu = haftada kaç antrenman). ankle: ayak bileği rutini eklensin mi. */
-const PROFILES = {
-  baran: {
-    name: 'Baran', days: ['A', 'B', 'C', 'D', 'T', 'K'], equip: ['bar', 'mat', 'kb', 'bag'], flags: ['cleared'], warm: WARM, ankle: true, pull: true,
+/* ŞABLONLAR — bir profil bir şablonu kullanır: günleri, sırası, ekipmanı ve kuralları buradan gelir.
+   rotation: haftalık sıra (uzunluğu = haftada kaç antrenman). ankle: ayak bileği rutini eklensin mi.
+   Profiller (kişiler) uygulamanın içinden eklenir; DEFAULT_PROFILES ilk açılışta gelenler. */
+const TEMPLATES = {
+  ekipman: {
+    name: 'Ekipmanlı: barfiks, kettlebell, torba + ayak bileği', days: ['A', 'B', 'C', 'D', 'T', 'K'], equip: ['bar', 'mat', 'kb', 'bag'], flags: ['cleared'], warm: WARM, ankle: true, pull: true,
     rotation: eq => eq.kb ? ['A', 'B', 'D', 'C'] : ['A', 'B', 'A', 'C'],
     notes: ['Ayak bileği sakatlığından dönerken zıplama, derin çömelme ve hamle (lunge) yok. Barfiksten atlayarak inme, sandalyeye bas.',
       'Keskin ağrı ya da bir gecede inmeyen şişlik olursa ayak bileği hareketlerini bırak ve doktora sor.',
       'Barfiks: A gününde her setten sonra kaç tekrar yaptığını gir. Bütün setlerde hedefi tutarsan seviye yükselir, iki antrenman üst üste tutmazsa bir iner.']
   },
-  nur: {
-    name: 'Nur', days: ['N1', 'N2', 'N3'], equip: ['mat'], flags: [], warm: [{ ex: 'march', sec: 60 }, { ex: 'circ', sec: 40 }, { ex: 'cat', sec: 40 }], ankle: false, pull: false,
+  mat: {
+    name: 'Sadece yoga matı', days: ['N1', 'N2', 'N3'], equip: ['mat'], flags: [], warm: [{ ex: 'march', sec: 60 }, { ex: 'circ', sec: 40 }, { ex: 'cat', sec: 40 }], ankle: false, pull: false,
     rotation: () => ['N1', 'N2', 'N3'],
     notes: ['Haftada 3 gün, aralarda bir gün dinlen. Sıra: N1 – N2 – N3.',
       'Zorlanırsan tekrar sayısını azalt ya da dinlenmeyi uzat; formu bozmadan yapmak sayıdan önemli.',
@@ -184,5 +185,7 @@ const PROFILES = {
   }
 };
 
-return { byWeek, EQUIP, FLAGS, POSES, EX, WARM, ANKLE, COOL, DAYS, PROFILES };
+const DEFAULT_PROFILES = [{ id: 'baran', name: 'Baran', tpl: 'ekipman' }, { id: 'nur', name: 'Nur', tpl: 'mat' }];
+
+return { byWeek, EQUIP, FLAGS, POSES, EX, WARM, ANKLE, COOL, DAYS, TEMPLATES, DEFAULT_PROFILES };
 })();

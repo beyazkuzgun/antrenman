@@ -30,6 +30,13 @@ Barfiks demiri, yoga matı, kettlebell ve boks torbası için sesli antrenman sa
 
 GitHub Pages: Settings → Pages → Branch: `main`, klasör `/ (root)`. Adres: `https://<kullanıcı>.github.io/antrenman/`. iPhone'da Safari'de aç → Paylaş → Ana Ekrana Ekle.
 
+## Özellikler
+
+- Profiller: kişi ekle, adlandır, sil; her profil bir şablon (program) kullanır. İlk açılışta "Kim antrenman yapacak?" sorulur.
+- Yarım kalan antrenman 6 saat içinde kaldığı adımdan devam ettirilebilir.
+- İstatistik: bu hafta, toplam, süre, seri, son 8 hafta; barfiks seviyesi ve en iyisi.
+- Geçmişten yanlış kaydı silme, dinlenmeye +15 sn, hareket kütüphanesi (önizleme), takvim hatırlatıcısı (.ics), yeni sürüm bildirimi.
+
 ## Kayıtlar
 
 Geçmiş ve ayarlar cihazdaki tarayıcıda tutulur. Uygulama içinde Ayarlar → Yedek al ile dosya ya da metin olarak yedeklenir, aynı yerden geri yüklenir.
