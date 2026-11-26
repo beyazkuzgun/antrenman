@@ -196,7 +196,13 @@ function tick() {
   const s = steps[i];
   if (left === 10 && s && s.k === 'rest') say('On saniye');
   if (left <= 3 && left > 0) beep(660, 120);
-  if (left <= 0) go(i + 1);
+  if (left <= 0) catchUp();
+}
+/* Ekran kilitliyken süreli adımlar geçtiyse aradaki adımları atla değil, tamamlanmış say ve doğru yerden devam et. */
+function catchUp() {
+  let over = Math.max(0, Date.now() - end), j = i + 1;
+  while (j < steps.length && steps[j].k !== 'work' && over >= steps[j].sec * 1000) { over -= steps[j].sec * 1000; j++ }
+  go(j, over);
 }
 function announce(s) {
   const n = steps[i + 1];
@@ -206,12 +212,12 @@ function announce(s) {
 }
 const saveSess = () => write(SKEY(), { day, week, i, sk: [...skipped], pulls, started, at: Date.now() });
 const clearSess = () => drop(SKEY());
-function go(j) {
+function go(j, over) {
   stop(); hideAsk(); i = j;
   if (!started) started = Date.now();
   if (i >= steps.length) { finish(); show(); renderLog(); header(); stats(); return }
   const s = steps[i];
-  if (s.k !== 'work') { left = total = s.sec; end = Date.now() + s.sec * 1000; beep(s.k === 'rest' ? 440 : 880, 250); timer = setInterval(tick, 200) }
+  if (s.k !== 'work') { total = s.sec; end = Date.now() + s.sec * 1000 - (over || 0); left = Math.max(0, Math.ceil((end - Date.now()) / 1000)); beep(s.k === 'rest' ? 440 : 880, 250); timer = setInterval(tick, 200) }
   else beep(880, 150);
   vib(60); announce(s); show(); saveSess(); $('resume').hidden = true;
 }
