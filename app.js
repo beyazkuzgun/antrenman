@@ -273,8 +273,8 @@ function library() {
 $('lib').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return; const id = b.dataset.id;
   if (running()) { $('libmsg').textContent = 'Antrenman sürerken önizleme kapalı.'; return }
-  anim(id); set('Önizleme', '', EX[id].name, '', EX[id].tip, 'Başla\'ya basınca günün antrenmanı başlar.'); $('tag').textContent = 'Önizleme'; $('libmsg').textContent = '';
-  window.scrollTo({ top: $('clock').offsetTop - 10, behavior: 'smooth' });
+
+  showView('antrenman', true); anim(id); set('Önizleme', '', EX[id].name, '', EX[id].tip, 'Başla\'ya basınca günün antrenmanı başlar.'); $('tag').textContent = 'Önizleme'; $('libmsg').textContent = '';
 });
 
 /* ---------- barfiks sorusu ---------- */
@@ -386,6 +386,19 @@ $('plan').addEventListener('click', e => {
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && running()) { wake(true); tick() } });
 $('updgo').onclick = () => location.reload();
+
+/* ---------- sekmeler ---------- */
+const VIEWS = ['antrenman', 'ilerleme', 'hareketler', 'ayarlar'];
+function showView(v, push) {
+  if (!VIEWS.includes(v)) v = 'antrenman';
+  document.querySelectorAll('.view').forEach(x => x.hidden = x.dataset.v !== v);
+  document.querySelectorAll('#tabbar button').forEach(b => b.dataset.v === v ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
+  if (push && location.hash !== '#' + v) history.replaceState(null, '', '#' + v);
+  write('antrenman.view', v); window.scrollTo(0, 0);
+}
+$('tabbar').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showView(b.dataset.v, true) });
+window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
+showView(location.hash.slice(1) || read('antrenman.view', 'antrenman'));
 
 /* ---------- hesap ve bulut eşitleme ---------- */
 function snapshot() { const st = {}; PROFS.forEach(x => { const v = read('antrenman.v2.' + x.id, null); if (v) st[x.id] = v }); return { v: 1, profiles: PROFS, delp: read('antrenman.delp', []), states: st } }
