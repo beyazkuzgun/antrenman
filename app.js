@@ -97,24 +97,25 @@ function mk(it, grp, emom) {
   const pt = x.track === 'pull' && PR.pull;
   return { ...s, k: 'work', det: (x.track === 'pull' ? pullText(false) : it.reps) + kb, ask: pt };
 }
-function build(dk, w) {
+function build(dk, w, q) {
+  const half = n => q ? Math.max(1, Math.ceil(n / 2)) : n;
   const d = P.DAYS[dk]; let s = [];
   const add = (it, g, em) => { const x = mk(it, g, em); if (x) s.push(x) };
   if (!d.noWarm) PR.warm.forEach(it => add(it, 'Isınma'));
   for (const b of d.blocks) {
     if (b.type === 'circuit') {
-      const R = b.rounds(w), rest = b.rest(w);
+      const R = half(b.rounds(w)), rest = b.rest(w);
       for (let r = 1; r <= R; r++) { const g = (b.name || 'Devre') + ' ' + r + '/' + R; b.items.forEach(it => add(it, g)); if (r < R || b.restLast) add({ rest }, g) }
     } else if (b.type === 'emom') {
-      const its = b.items.filter(it => avail(pick(it))), M = b.minutes(w), per = its.length;
+      const its = b.items.filter(it => avail(pick(it))), per = its.length, M0 = b.minutes(w), M = q ? Math.max(per, Math.round(M0 / 2 / per) * per) : M0;
       for (let i = 0; i < M; i++) add(its[i % per], 'Tur ' + (Math.floor(i / per) + 1) + '/' + Math.ceil(M / per) + ' · dk ' + (i + 1), true);
     } else if (b.type === 'rounds') {
-      const R = b.rounds(w);
+      const R = half(b.rounds(w));
       for (let r = 1; r <= R; r++) { const g = 'Raund ' + r + '/' + R; s.push({ k: 'time', id: b.ex, name: EX[b.ex].name + ' · raund ' + r, tip: EX[b.ex].tip, sec: b.work, det: b.combos[(r - 1) % b.combos.length], grp: g }); if (r < R) add({ rest: b.rest }, g) }
     } else if (b.type === 'list') b.items.forEach(it => add(it, b.name || ''));
   }
   if (PR.ankle) P.ANKLE.forEach(it => add(it, 'Ayak bileği'));
-  if (!d.noCool) P.COOL.forEach(it => add(it, 'Soğuma'));
+  if (!d.noCool) P.COOL.forEach(it => add(q ? { ...it, sec: Math.min(it.sec, 20) } : it, 'Soğuma'));
   return s;
 }
 
@@ -123,7 +124,8 @@ const rot = () => PR.rotation(S.cfg.eq);
 const isMain = h => !P.DAYS[h.d] || !P.DAYS[h.d].extra;
 const mains = () => S.hist.filter(isMain);
 const gapDays = () => { const m = mains()[0]; return m ? Math.floor((Date.now() - m.t) / DAY) : null };
-function autoWeek() { const ok = mains().filter(h => h.ok !== false).length; let w = 1 + Math.floor(ok / rot().length); const g = gapDays(); if (g !== null && g > 10) w = Math.max(1, w - 1); return w }
+const okCount = () => mains().filter(h => h.ok !== false).reduce((a, h) => a + (h.q ? .5 : 1), 0);
+function autoWeek() { const ok = okCount(); let w = 1 + Math.floor(ok / rot().length); const g = gapDays(); if (g !== null && g > 10) w = Math.max(1, w - 1); return w }
 const getWeek = () => Math.min(12, Math.max(1, autoWeek() + S.off));
 const nextDay = () => { const r = rot(); return r[mains().length % r.length] };
 const dayOk = k => { const d = P.DAYS[k]; return d && PR.days.includes(k) && (!d.needs || S.cfg.eq[d.needs]) };
@@ -140,20 +142,20 @@ const spoken = s => s.replace(/–/g, ' ile ').replace(/\+/g, ' artı ').replace
 async function wake(on) { try { if (on && !lock && navigator.wakeLock) lock = await navigator.wakeLock.request('screen'); if (!on && lock) { lock.release(); lock = null } } catch (e) {} }
 
 /* ---------- oturum ---------- */
-let week = getWeek(), day = nextDay(), steps = [], i = -1, left = 0, total = 0, end = 0, remain = 0, timer = null, paused = false, skipped = new Set(), pulls = [], doneMsg = '', started = 0;
+let short = false, week = getWeek(), day = nextDay(), steps = [], i = -1, left = 0, total = 0, end = 0, remain = 0, timer = null, paused = false, skipped = new Set(), pulls = [], doneMsg = '', started = 0;
 const fmt = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 const running = () => i >= 0 && i < steps.length;
 
 function header() {
   const nd = nextDay(), r = rot(), keys = [...new Set(r)].concat(PR.days.filter(k => P.DAYS[k].extra && !r.includes(k))).filter(dayOk);
   $('prof').innerHTML = PROFS.map(x => '<button data-p="' + esc(x.id) + '" aria-pressed="' + (x.id === pid) + '">' + esc(x.name) + '</button>').join('');
-  $('notes').innerHTML = PR.notes.concat(['Hafta kendiliğinden ilerler: hareketlerin en fazla dörtte birini atladığın her ' + r.length + ' antrenman 1 hafta sayılır. 10 günden uzun ara verirsen hafta bir geri gelir.']).map(t => '<p>' + esc(t) + '</p>').join('');
+  $('notes').innerHTML = PR.notes.concat(['Hafta kendiliğinden ilerler: hareketlerin en fazla dörtte birini atladığın her ' + r.length + ' antrenman 1 hafta sayılır. 10 günden uzun ara verirsen hafta bir geri gelir.', "Vaktim az: devre ve dakika sayısı yarıya iner, ısınma" + (PR.ankle ? ' ve ayak bileği rutini' : '') + " aynı kalır, soğuma kısalır. Sırayı ilerletir, haftaya yarım sayılır."]).map(t => '<p>' + esc(t) + '</p>').join('');
   document.title = 'Antrenman · ' + me().name;
   $('tabs').innerHTML = keys.map(d => '<button data-d="' + d + '" aria-pressed="' + (d === day) + '">' + (P.DAYS[d].extra ? esc(P.DAYS[d].title) : d + ' günü') + '<span class="s">' + (P.DAYS[d].extra ? 'ek gün' : esc(P.DAYS[d].title)) + (d === nd ? ' · sıradaki' : '') + '</span></button>').join('');
   $('rotinfo').textContent = me().name + ' · sıra: ' + r.join(' – ') + ', haftada ' + r.length + ' gün.';
-  $('wv').textContent = week;
-  const ok = mains().filter(h => h.ok !== false).length;
-  $('nextinfo').textContent = 'Sayılan antrenman: ' + ok + ' · sonraki haftaya ' + (r.length - ok % r.length) + ' kaldı' + (PR.pull ? ' · barfiks seviyesi: ' + pullText(false) : '') + (S.off ? ' · hafta elle ayarlı' : '');
+  $('wv').textContent = week; $('qk').setAttribute('aria-pressed', short);
+  const ok = okCount();
+  $('nextinfo').textContent = 'Sayılan antrenman: ' + ok + ' · sonraki haftaya ' + Math.ceil(r.length - ok % r.length) + ' kaldı' + (PR.pull ? ' · barfiks seviyesi: ' + pullText(false) : '') + (S.off ? ' · hafta elle ayarlı' : '');
   const g = gapDays(), last = mains()[0], msg = [];
   if (g !== null && g > 10) msg.push(g + ' gündür ara verdin, hafta bir geri alındı. Dinlenmeleri ihtiyacın kadar uzat.');
   else if (g !== null && g >= 4) msg.push(g + ' gündür ara verdin. Program kaldığın yerden, ' + nd + ' gününden devam ediyor.');
@@ -163,7 +165,7 @@ function header() {
 function plan() {
   $('plan').innerHTML = steps.map((s, j) => '<li data-j="' + j + '" class="' + (s.k === 'rest' ? 'rs ' : '') + (j < i ? 'done' : j === i ? 'cur' : '') + '"><span class="n">' + (j + 1) + '</span><span>' + esc(s.name) + ' <span class="next">· ' + esc(s.grp) + '</span>' + (skipped.has(j) ? ' <span class="x">atlandı</span>' : '') + '</span><span class="v">' + esc(s.k === 'work' ? s.det : fmt(s.sec)) + '</span></li>').join('');
 }
-function load() { stop(); week = getWeek(); if (!dayOk(day)) day = nextDay(); steps = build(day, week); i = -1; paused = false; skipped = new Set(); pulls = []; doneMsg = ''; started = 0; hideAsk(); show(); header(); settings(); library(); stats(); resumeBar() }
+function load() { stop(); week = getWeek(); if (!dayOk(day)) day = nextDay(); steps = build(day, week, short); i = -1; paused = false; skipped = new Set(); pulls = []; doneMsg = ''; started = 0; hideAsk(); show(); header(); settings(); library(); stats(); resumeBar() }
 function set(ph, cls, nm, dt, tp, af) { $('ph').textContent = ph; $('ph').className = 'phase' + (cls ? ' ' + cls : ''); $('nm').textContent = nm; $('dt').textContent = dt; $('tp').textContent = tp; $('af').textContent = af }
 function show() {
   const s = steps[i]; $('pb').style.width = (i < 0 ? 0 : Math.min(100, i / steps.length * 100)) + '%';
@@ -174,7 +176,7 @@ function show() {
     $('tv').textContent = '✓'; $('tl').textContent = ''; $('go').textContent = 'Baştan'; $('tag').textContent = ''; arc(1); anim('child'); plan(); return;
   }
   if (!s) {
-    set('Hazır', '', (P.DAYS[day].extra ? P.DAYS[day].title : day + ' günü: ' + P.DAYS[day].title), steps.length + ' adım · yaklaşık ' + Math.round(est() / 60) + ' dk · hafta ' + week, 'iPhone\'da sessiz modu kapat, yoksa ses çıkmaz.', 'İlk hareket: ' + steps[0].name);
+    set('Hazır', '', (P.DAYS[day].extra ? P.DAYS[day].title : day + ' günü: ' + P.DAYS[day].title), steps.length + ' adım · yaklaşık ' + Math.round(est() / 60) + ' dk · hafta ' + week + (short ? ' · kısa' : ''), 'iPhone\'da sessiz modu kapat, yoksa ses çıkmaz.', 'İlk hareket: ' + steps[0].name);
     $('tv').textContent = '0:00'; $('tl').textContent = ''; $('go').textContent = 'Başla'; $('tag').textContent = 'İlk hareket'; arc(0); anim(steps[0].id); plan(); return;
   }
   const n = steps[i + 1];
@@ -210,7 +212,7 @@ function announce(s) {
   else if (s.k === 'work') say(s.name + '. ' + spoken(s.det));
   else say(s.name + '. ' + (s.k === 'emom' ? spoken(s.det) : s.sec + ' saniye'));
 }
-const saveSess = () => write(SKEY(), { day, week, i, sk: [...skipped], pulls, started, at: Date.now() });
+const saveSess = () => write(SKEY(), { day, week, q: short, i, sk: [...skipped], pulls, started, at: Date.now() });
 const clearSess = () => drop(SKEY());
 function go(j, over) {
   stop(); hideAsk(); i = j;
@@ -233,7 +235,7 @@ function finish() {
     else doneMsg = 'Barfikste aynı seviyede devam: ' + pullText(false) + '.';
   }
   const min = Math.max(1, Math.round((Date.now() - (started || Date.now())) / 60000));
-  S.hist.unshift({ d: day, w: week, t: Date.now(), min, sk, ns: n, ok: n / work <= .25, pu: pulls.length ? pulls : undefined, lv: PR.pull ? S.pull.L : undefined });
+  S.hist.unshift({ d: day, w: week, q: short || undefined, t: Date.now(), min, sk, ns: n, ok: n / work <= .25, pu: pulls.length ? pulls : undefined, lv: PR.pull ? S.pull.L : undefined });
   S.hist = S.hist.slice(0, 500); save(); clearSess();
   doneMsg = (doneMsg ? doneMsg + ' ' : '') + min + ' dakika sürdü.';
   beep(880, 300); setTimeout(() => beep(1100, 500), 320); vib([80, 60, 160]); say('Antrenman tamam. Eline sağlık.'); wake(false);
@@ -241,12 +243,12 @@ function finish() {
 function resumeBar() {
   const s = read(SKEY(), null);
   if (!s || Date.now() - s.at > 6 * 36e5 || !dayOk(s.day)) { if (s) clearSess(); $('resume').hidden = true; return }
-  $('resmsg').textContent = 'Yarım kalan antrenman var: ' + (P.DAYS[s.day].extra ? P.DAYS[s.day].title : s.day + ' günü') + ', ' + (s.i + 1) + '. adım.';
+  $('resmsg').textContent = 'Yarım kalan antrenman var: ' + (P.DAYS[s.day].extra ? P.DAYS[s.day].title : s.day + ' günü') + (s.q ? ' (kısa)' : '') + ', ' + (s.i + 1) + '. adım.';
   $('resume').hidden = false;
 }
 $('resgo').onclick = () => {
   const s = read(SKEY(), null); if (!s) return;
-  day = s.day; stop(); week = s.week; steps = build(day, week); skipped = new Set(s.sk); pulls = s.pulls || []; started = s.started || Date.now(); doneMsg = ''; paused = false;
+  day = s.day; stop(); week = s.week; short = !!s.q; steps = build(day, week, short); skipped = new Set(s.sk); pulls = s.pulls || []; started = s.started || Date.now(); doneMsg = ''; paused = false;
   header(); wake(true); go(Math.min(s.i, steps.length - 1));
 };
 $('resno').onclick = () => { clearSess(); $('resume').hidden = true };
@@ -254,7 +256,7 @@ $('resno').onclick = () => { clearSess(); $('resume').hidden = true };
 /* ---------- geçmiş ve istatistik ---------- */
 let delArm = -1;
 function renderLog() {
-  $('log').innerHTML = S.hist.length ? S.hist.slice(0, 30).map((h, k) => '<li><span>' + new Date(h.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'short' }) + ' — ' + esc(P.DAYS[h.d] ? (P.DAYS[h.d].extra ? P.DAYS[h.d].title : h.d + ' günü') : h.d) + ', hafta ' + h.w + (h.min ? ', ' + h.min + ' dk' : '') + (h.pu ? ', barfiks: ' + h.pu.join('-') : '') + (h.ns ? ', ' + h.ns + ' hareket atlandı' : '') + (h.ok === false ? ' (haftaya sayılmadı)' : '') + '</span><button class="del" data-k="' + k + '">' + (delArm === k ? 'Silinsin mi?' : 'Sil') + '</button></li>').join('') : '<li><span>Henüz kayıt yok. İlk antrenmanı bitirince burada görünür.</span></li>';
+  $('log').innerHTML = S.hist.length ? S.hist.slice(0, 30).map((h, k) => '<li><span>' + new Date(h.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'short' }) + ' — ' + esc(P.DAYS[h.d] ? (P.DAYS[h.d].extra ? P.DAYS[h.d].title : h.d + ' günü') : h.d) + ', hafta ' + h.w + (h.q ? ', kısa' : '') + (h.min ? ', ' + h.min + ' dk' : '') + (h.pu ? ', barfiks: ' + h.pu.join('-') : '') + (h.ns ? ', ' + h.ns + ' hareket atlandı' : '') + (h.ok === false ? ' (haftaya sayılmadı)' : '') + '</span><button class="del" data-k="' + k + '">' + (delArm === k ? 'Silinsin mi?' : 'Sil') + '</button></li>').join('') : '<li><span>Henüz kayıt yok. İlk antrenmanı bitirince burada görünür.</span></li>';
 }
 $('log').addEventListener('click', e => {
   const b = e.target.closest('button.del'); if (!b) return; const k = +b.dataset.k;
@@ -366,6 +368,7 @@ $('bld').onclick = () => restore($('btx').value);
 
 /* ---------- düğmeler ---------- */
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (running() && !confirmSwitch()) return; day = b.dataset.d; load() });
+$('qk').onclick = () => { if (running() && !confirmSwitch()) return; short = !short; load() };
 $('wm').onclick = () => { if (getWeek() > 1) { S.off--; save(); load() } };
 $('wp').onclick = () => { if (getWeek() < 12) { S.off++; save(); load() } };
 $('go').onclick = () => {

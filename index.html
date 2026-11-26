@@ -38,6 +38,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .tabs .s{display:block;font-size:12px;font-weight:400;opacity:.85;margin-top:-4px}
 .wk{margin:12px 0 6px}.wk b{font:800 22px "Barlow Condensed";min-width:40px;text-align:center}
 .wk button{width:44px;padding:0;font-size:22px}
+.wk .qk{width:auto;margin-left:auto;padding:0 14px;font-size:15px}.wk .qk[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .next{font-size:14px;color:var(--mut)}
 .alert{font-size:15px;background:var(--redsoft);border-radius:10px;padding:8px 12px;margin:8px 0 0}
 .alert:empty{display:none}
@@ -136,6 +137,7 @@ input[type=time],.prow input,#newname,#whoname{font:16px Barlow,sans-serif;min-h
   <div class="row wk">
     <span>Hafta</span>
     <button id="wm" aria-label="Haftayı azalt">−</button><b id="wv">1</b><button id="wp" aria-label="Haftayı artır">+</button>
+    <button id="qk" class="qk" aria-pressed="false">Vaktim az</button>
   </div>
   <p class="next" id="nextinfo"></p>
   <section class="clock" id="clock" aria-live="polite">

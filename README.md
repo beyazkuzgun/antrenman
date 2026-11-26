@@ -33,6 +33,7 @@ GitHub Pages: Settings → Pages → Branch: `main`, klasör `/ (root)`. Adres: 
 ## Özellikler
 
 - Profiller: kişi ekle, adlandır, sil; her profil bir şablon (program) kullanır. İlk açılışta "Kim antrenman yapacak?" sorulur.
+- "Vaktim az" düğmesi: devre/dakika sayısı yarıya iner, ısınma ve ayak bileği rutini aynı kalır, soğuma kısalır; sırayı ilerletir, haftaya yarım sayılır.
 - Yarım kalan antrenman 6 saat içinde kaldığı adımdan devam ettirilebilir.
 - İstatistik: bu hafta, toplam, süre, seri, son 8 hafta; barfiks seviyesi ve en iyisi.
 - Geçmişten yanlış kaydı silme, dinlenmeye +15 sn, hareket kütüphanesi (önizleme), takvim hatırlatıcısı (.ics), yeni sürüm bildirimi.
