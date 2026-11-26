@@ -9,6 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Antrenman">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>/* giriş bilinmiyorsa içerik hiç çizilmesin */try{if(!localStorage.getItem('antrenman.uid'))document.documentElement.classList.add('lock')}catch(e){document.documentElement.classList.add('lock')}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -131,6 +132,7 @@ input[type=time],.prow input,#newname,#whoname{font:16px Barlow,sans-serif;min-h
 .pv{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.92);display:grid;grid-template-rows:minmax(0,1fr) auto;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
 .pv[hidden]{display:none}.pv img{width:100%;height:100%;object-fit:contain}
 .pv .row{justify-content:space-between;color:#eee;padding-top:10px}
+html.lock .wrap,html.lock .tabbar,html.lock .pv,html.lock #who{display:none!important}html.lock #gate{display:grid!important}
 .gate{z-index:10}.gate .acform{max-width:340px;margin:0 auto;width:100%}.gate p{margin:0}
 @media(max-width:600px){.prow{grid-template-columns:minmax(0,1fr) auto}.prow select{grid-column:1/-1;grid-row:2}}
 @media(max-width:600px){.body{grid-template-columns:110px minmax(0,1fr);gap:12px;padding:14px}.ring .t{font-size:34px}.ctl{padding:0 14px 14px}}

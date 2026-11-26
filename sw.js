@@ -1,5 +1,5 @@
 /* Çevrimdışı çalışma. Dosyaları değiştirdiğinde VERSION'u bir artır. */
-const VERSION = 'antrenman-v9';
+const VERSION = 'antrenman-v10';
 const FILES = ['./', 'index.html', 'app.js', 'program.js', 'config.js', 'sync.js', 'manifest.webmanifest', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES))); self.skipWaiting() });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k))))); self.clients.claim() });

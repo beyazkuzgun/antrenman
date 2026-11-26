@@ -526,10 +526,11 @@ function acct(status) {
   $('acbadge').textContent = u ? '☁ ' + (u.email || 'bulut') : 'Giriş yapılmadı';
 }
 /* zorunlu giriş: hesap yoksa uygulama açılmaz. Cihazda başka bir hesabın kayıtları varsa yeni hesaba karışmaz, silinir. */
-const gate = on => { $('gate').hidden = !on; if (on) $('who').hidden = true };
+const gate = on => { $('gate').hidden = !on; document.documentElement.classList.toggle('lock', on); if (on) $('who').hidden = true };
 const gmsg = t => { $('gmsg').textContent = t || '' };
 function wipeLocal() { try { Object.keys(localStorage).filter(k => /^(antrenman\.|ant_)/.test(k)).forEach(k => localStorage.removeItem(k)) } catch (e) {} }
 let whoDone = false;
+if (!SY.enabled) document.documentElement.classList.remove('lock');
 if (SY.enabled) {
   if (!read('antrenman.uid', null)) { gate(true); gmsg('Bağlanıyor…') }
   SY.onUser(u => {
