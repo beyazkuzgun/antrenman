@@ -102,6 +102,8 @@ textarea{width:100%;min-height:90px;font:14px/1.4 ui-monospace,monospace;border:
 input[type=time],.prow input,#newname,#whoname{font:16px Barlow,sans-serif;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);padding:0 10px}
 .prow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}
 .prow select{min-width:0;font-size:14px}
+.acform{display:grid;gap:8px}.acform input{font:16px Barlow,sans-serif;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);padding:0 10px}
+.wide{width:100%;background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .who{position:fixed;inset:0;z-index:9;background:var(--bg);display:grid;place-content:center;gap:16px;padding:24px;text-align:center}
 .who[hidden]{display:none}
 .who h2{margin:0}.who .row{justify-content:center}.who .row button{min-width:110px;font-size:18px}
@@ -164,6 +166,19 @@ input[type=time],.prow input,#newname,#whoname{font:16px Barlow,sans-serif;min-h
   <p class="next" id="libmsg"></p>
 
   <h2>Ayarlar</h2>
+  <details id="acct" hidden open><summary>Hesap ve eşitleme · <span id="acbadge" class="next"></span></summary>
+    <div id="acout">
+      <p><button id="acg" class="wide">Google ile giriş</button></p>
+      <p class="next">ya da e-posta ile:</p>
+      <div class="acform"><input id="acmail" type="email" autocomplete="email" placeholder="E-posta" aria-label="E-posta"><input id="acpass" type="password" autocomplete="current-password" placeholder="Şifre (en az 6 karakter)" aria-label="Şifre"></div>
+      <div class="row" style="margin-top:8px"><button id="aclogin">Giriş yap</button><button id="acsign">Hesap aç</button><button id="acreset">Şifremi unuttum</button></div>
+    </div>
+    <div id="acin" hidden>
+      <p id="acwho"></p>
+      <div class="row"><button id="acsyncnow">Şimdi eşitle</button><button id="aclogout">Çıkış yap</button><button id="acdel">Hesabı sil</button></div>
+    </div>
+    <p class="next" id="acstat"></p>
+  </details>
   <details><summary>Profiller</summary>
     <div id="profs"></div>
     <p class="next">Yeni kişi ekle:</p>
@@ -196,6 +211,8 @@ input[type=time],.prow input,#newname,#whoname{font:16px Barlow,sans-serif;min-h
   <div class="row" id="whob"></div>
   <div class="new"><p class="next">ya da yeni profil:</p><input id="whoname" placeholder="Adın" maxlength="20" aria-label="Ad"><select id="whotpl" aria-label="Program"></select><button id="whogo">Oluştur</button></div>
 </div>
+<script src="config.js"></script>
+<script src="sync.js"></script>
 <script src="program.js"></script>
 <script src="app.js"></script>
 </body>

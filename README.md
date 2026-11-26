@@ -37,6 +37,12 @@ GitHub Pages: Settings → Pages → Branch: `main`, klasör `/ (root)`. Adres: 
 - İstatistik: bu hafta, toplam, süre, seri, son 8 hafta; barfiks seviyesi ve en iyisi.
 - Geçmişten yanlış kaydı silme, dinlenmeye +15 sn, hareket kütüphanesi (önizleme), takvim hatırlatıcısı (.ics), yeni sürüm bildirimi.
 
+## Hesap ve eşitleme
+
+Firebase projesi: `antrenman-60c3b` (Auth: Google + e-posta/şifre, Firestore `eur3`). Ayarlar `config.js` içinde.
+Her kullanıcının verisi `users/{uid}` belgesinde durur; kural: kişi sadece kendi belgesini okur/yazar.
+Giriş yapınca cihazdaki profiller ve geçmiş buluttakiyle birleştirilir (antrenmanlar zamana göre birleşir, silinenler geri gelmez).
+
 ## Kayıtlar
 
 Geçmiş ve ayarlar cihazdaki tarayıcıda tutulur. Uygulama içinde Ayarlar → Yedek al ile dosya ya da metin olarak yedeklenir, aynı yerden geri yüklenir.

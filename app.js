@@ -7,12 +7,14 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const read = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v) } catch (e) { return d } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch (e) {} };
 const drop = k => { try { localStorage.removeItem(k) } catch (e) {} };
+const SY = window.SYNC || { enabled: false };
+let syncing = false, lastSync = 0;
 const vib = ms => { try { navigator.vibrate && navigator.vibrate(ms) } catch (e) {} };
 
 /* ---------- profiller ---------- */
 let PROFS = read('antrenman.profiles', null) || P.DEFAULT_PROFILES.map(x => ({ ...x }));
 PROFS = PROFS.filter(x => P.TEMPLATES[x.tpl]); if (!PROFS.length) PROFS = P.DEFAULT_PROFILES.map(x => ({ ...x }));
-const saveProfs = () => write('antrenman.profiles', PROFS);
+const saveProfs = () => { write('antrenman.profiles', PROFS); cloud() };
 const firstRun = read('antrenman.profile', null) == null;
 let pid = read('antrenman.profile', PROFS[0].id); if (!PROFS.find(x => x.id === pid)) pid = PROFS[0].id;
 const me = () => PROFS.find(x => x.id === pid);
@@ -36,8 +38,8 @@ function loadState() {
   return s;
 }
 let S = loadState();
-const save = () => write(KEY(), S);
-save();
+const save = () => { S.mod = Date.now(); write(KEY(), S); cloud() };
+write(KEY(), S);
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist() } catch (e) {}
 
 /* ---------- animasyon ---------- */
@@ -251,7 +253,7 @@ function renderLog() {
 $('log').addEventListener('click', e => {
   const b = e.target.closest('button.del'); if (!b) return; const k = +b.dataset.k;
   if (delArm !== k) { delArm = k; renderLog(); return }
-  S.hist.splice(k, 1); delArm = -1; save(); renderLog(); header(); stats();
+  S.delT = (S.delT || []).concat(S.hist[k].t); S.hist.splice(k, 1); delArm = -1; save(); renderLog(); header(); stats();
 });
 function stats() {
   const r = rot(), now = Date.now(), wk = monday(now), weeks = [];
@@ -321,7 +323,7 @@ $('remgo').onclick = () => {
 };
 
 /* ---------- profil yönetimi ---------- */
-function switchTo(id) { stop(); wake(false); pid = id; PR = P.TEMPLATES[me().tpl]; write('antrenman.profile', pid); S = loadState(); save(); day = nextDay(); renderLog(); load() }
+function switchTo(id) { stop(); wake(false); pid = id; PR = P.TEMPLATES[me().tpl]; write('antrenman.profile', pid); S = loadState(); write(KEY(), S); day = nextDay(); renderLog(); load() }
 let swArm = 0; function confirmSwitch() { if (Date.now() - swArm < 4000) return true; swArm = Date.now(); $('alert').textContent = 'Antrenman sürüyor. Değiştirmek için tekrar bas, yarım kalan antrenman kaydedildi.'; return false }
 $('prof').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.dataset.p === pid) return; if (running() && !confirmSwitch()) return; switchTo(b.dataset.p) });
 $('profs').addEventListener('change', e => {
@@ -332,7 +334,7 @@ $('profs').addEventListener('change', e => {
 $('profs').addEventListener('click', e => {
   const b = e.target.closest('button[data-rm]'); if (!b) return; const id = b.dataset.rm;
   if (rmArm !== id) { rmArm = id; settings(); return }
-  rmArm = ''; PROFS = PROFS.filter(p => p.id !== id); saveProfs(); drop('antrenman.v2.' + id); drop('antrenman.sess.' + id);
+  rmArm = ''; write('antrenman.delp', read('antrenman.delp', []).concat(id)); PROFS = PROFS.filter(p => p.id !== id); saveProfs(); drop('antrenman.v2.' + id); drop('antrenman.sess.' + id);
   if (pid === id) switchTo(PROFS[0].id); else { header(); settings() }
 });
 function addProfile(name, tpl) { const id = 'p' + Date.now().toString(36); PROFS.push({ id, name: name.trim().slice(0, 20), tpl }); saveProfs(); switchTo(id) }
@@ -384,6 +386,57 @@ $('plan').addEventListener('click', e => {
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && running()) { wake(true); tick() } });
 $('updgo').onclick = () => location.reload();
+
+/* ---------- hesap ve bulut eşitleme ---------- */
+function snapshot() { const st = {}; PROFS.forEach(x => { const v = read('antrenman.v2.' + x.id, null); if (v) st[x.id] = v }); return { v: 1, profiles: PROFS, delp: read('antrenman.delp', []), states: st } }
+function mergeState(a, b) {
+  if (!a) return b; if (!b) return a;
+  const n = (a.mod || 0) >= (b.mod || 0) ? a : b, o = n === a ? b : a, del = new Set([...(a.delT || []), ...(b.delT || [])]), seen = new Map();
+  [...a.hist, ...b.hist].forEach(h => { if (!del.has(h.t) && !seen.has(h.t)) seen.set(h.t, h) });
+  return { ...n, hist: [...seen.values()].sort((x, y) => y.t - x.t).slice(0, 500), delT: [...del].slice(-500), pull: { ...n.pull, best: Math.max(a.pull ? a.pull.best || 0 : 0, b.pull ? b.pull.best || 0 : 0) } };
+}
+function merge(l, r) {
+  if (!r) return l;
+  const delp = [...new Set([...(l.delp || []), ...(r.delp || [])])], profs = [];
+  [...(r.profiles || []), ...l.profiles].forEach(x => { if (!delp.includes(x.id) && !profs.find(y => y.id === x.id) && P.TEMPLATES[x.tpl]) profs.push(x) });
+  const states = {}; profs.forEach(x => { const m = mergeState(l.states[x.id], (r.states || {})[x.id]); if (m) states[x.id] = m });
+  return { v: 1, profiles: profs.length ? profs : l.profiles, delp, states };
+}
+function applySnap(m) {
+  write('antrenman.delp', m.delp); PROFS = m.profiles; write('antrenman.profiles', PROFS);
+  for (const id in m.states) write('antrenman.v2.' + id, m.states[id]);
+  if (!PROFS.find(x => x.id === pid)) pid = PROFS[0].id;
+  if (!running()) { PR = P.TEMPLATES[me().tpl]; write('antrenman.profile', pid); S = loadState(); day = nextDay(); renderLog(); load() } else { const st = m.states[pid]; if (st) S.hist = st.hist; header() }
+}
+function cloud() { if (!SY.enabled || syncing || !SY.user()) return; acct('Kaydediliyor…'); SY.push(snapshot, e => { if (e) acct('Buluta yazılamadı: ' + SY.msg(e)); else { lastSync = Date.now(); acct() } }) }
+async function fullSync() {
+  if (!SY.user()) return; syncing = true; acct('Eşitleniyor…');
+  try { const r = await SY.pull(), m = merge(snapshot(), r); applySnap(m); await SY.pushNow(m); lastSync = Date.now(); acct() }
+  catch (e) { acct('Eşitleme olmadı: ' + SY.msg(e)) }
+  syncing = false;
+}
+function acct(status) {
+  if (!SY.enabled) { $('acct').hidden = true; return }
+  $('acct').hidden = false; const u = SY.user();
+  $('acout').hidden = !!u; $('acin').hidden = !u;
+  if (u) $('acwho').textContent = (u.email || 'Google hesabı') + ' ile giriş yapıldı.';
+  $('acstat').textContent = status || (u ? (lastSync ? 'Son eşitleme ' + new Date(lastSync).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) + '. Kayıtlar bu hesaba bağlı her cihazda.' : '') : 'Giriş yapınca kayıtların buluta yedeklenir ve diğer cihazlarla eşitlenir.');
+  $('acbadge').textContent = u ? '☁ ' + (u.email || 'bulut') : 'Giriş yapılmadı';
+}
+if (SY.enabled) {
+  SY.onUser(u => { acct(); if (u) fullSync() });
+  SY.init().catch(() => acct('Hesap servisine ulaşılamadı. İnternet bağlantını kontrol et.'));
+  const em = () => $('acmail').value, pw = () => $('acpass').value, run = (f, ok) => { acct('Bekle…'); f().then(() => ok && acct(ok)).catch(e => acct(SY.msg(e))) };
+  $('acg').onclick = () => run(() => SY.google());
+  $('aclogin').onclick = () => run(() => SY.login(em(), pw()));
+  $('acsign').onclick = () => run(() => SY.signup(em(), pw()), 'Hesap açıldı.');
+  $('acreset').onclick = () => { if (!em().trim()) { acct('Önce e-postanı yaz.'); return } run(() => SY.reset(em()), 'Şifre sıfırlama bağlantısı e-postana gönderildi.') };
+  $('aclogout').onclick = () => run(() => SY.logout(), 'Çıkış yapıldı. Kayıtlar bu cihazda kalmaya devam ediyor.');
+  $('acsyncnow').onclick = () => fullSync();
+  let rmA = 0; $('acdel').onclick = () => { if (Date.now() - rmA > 4000) { rmA = Date.now(); $('acdel').textContent = 'Emin misin? Tekrar bas'; return } run(() => SY.remove(), 'Hesap ve buluttaki kayıtlar silindi. Bu cihazdaki kayıtlar duruyor.'); $('acdel').textContent = 'Hesabı sil' };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && SY.user() && !running() && Date.now() - lastSync > 60e3) fullSync() });
+}
+acct();
 
 renderLog(); load(); if (firstRun) who();
 try {
