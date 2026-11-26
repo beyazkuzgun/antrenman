@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Antrenman</title>
+<meta name="theme-color" content="#d0142c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Antrenman">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: kısa, komut veren, salon koçu gibi
+   IDEA: boks salonu duvarındaki raund saati + hareketi gösteren çöp adam
+   PICTURE: o anki hareketin canlı animasyonu, altında halka sayaç
+   COLOUR and TYPE: boks kırmızısı, beyaz zemin / gece kömür; Barlow Condensed rakamlar
+   LAYOUT: gün sekmeleri, animasyon, sayaç + kontroller, plan, ayarlar, geçmiş */
+:root{color-scheme:light dark;--bg:light-dark(#f4f2ef,#141313);--card:light-dark(#ffffff,#1e1c1c);--stage:light-dark(#f7f5f2,#181616);--ink:light-dark(#151313,#f3efec);--mut:light-dark(#6b6461,#a59e9a);--far:light-dark(#bdb5b0,#5a5350);--line:light-dark(#e2ddd8,#2f2b2a);--red:#d0142c;--redsoft:light-dark(#fbe3e6,#3a1519);--blue:light-dark(#1d4ed8,#7aa2ff)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Barlow,system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:760px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) max(4vw,14px,env(safe-area-inset-right)) max(48px,env(safe-area-inset-bottom)) max(4vw,14px,env(safe-area-inset-left))}
+h1{font:800 34px/1.05 "Barlow Condensed",sans-serif;margin:4px 0 2px}
+.sub{color:var(--mut);margin:0 0 14px}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.prof{gap:6px}.prof button{min-width:72px;border-radius:99px}
+.prof button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select{font:600 16px Barlow,sans-serif;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:0 14px;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.tabs button{padding:6px 14px;text-align:left}
+.tabs button[aria-pressed=true]{background:var(--red);border-color:var(--red);color:#fff}
+.tabs .s{display:block;font-size:12px;font-weight:400;opacity:.85;margin-top:-4px}
+.wk{margin:12px 0 6px}.wk b{font:800 22px "Barlow Condensed";min-width:40px;text-align:center}
+.wk button{width:44px;padding:0;font-size:22px}
+.next{font-size:14px;color:var(--mut)}
+.alert{font-size:15px;background:var(--redsoft);border-radius:10px;padding:8px 12px;margin:8px 0 0}
+.alert:empty{display:none}
+.clock{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:14px}
+.stage{position:relative;background:var(--stage);border-bottom:1px solid var(--line);height:clamp(190px,40vw,280px)}
+.stage svg{position:absolute;inset:0;width:100%;height:100%}
+.stage .tag{position:absolute;top:10px;left:12px;font:600 13px Barlow;padding:3px 10px;border-radius:99px;background:var(--card);border:1px solid var(--line)}
+.stage .tag:empty{display:none}
+.body{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px;padding:16px 18px;align-items:center}
+.ring{position:relative;aspect-ratio:1}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .t{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font:800 44px/1 "Barlow Condensed";font-variant-numeric:tabular-nums}
+.ring .t small{display:block;font:600 13px Barlow;color:var(--mut);margin-top:4px}
+.phase{display:inline-block;font:600 13px Barlow;padding:3px 10px;border-radius:99px;background:var(--redsoft);color:var(--red)}
+.phase.rest{background:light-dark(#e6edff,#1b2440);color:var(--blue)}
+.name{font:800 clamp(28px,6.5vw,42px)/1.05 "Barlow Condensed";margin:6px 0 4px;text-wrap:balance}
+.det{font-size:17px;margin:0 0 4px}
+.tip{color:var(--mut);font-size:15px;margin:0 0 6px}
+.after{font-size:14px;color:var(--mut);margin:0}
+.ctl{padding:0 18px 16px;gap:8px}
+.ctl .go{background:var(--red);border-color:var(--red);color:#fff;flex:1;font-size:18px}
+.bar{height:6px;background:var(--line)}.bar i{display:block;height:100%;background:var(--red);width:0;transition:width .3s}
+.ask{position:absolute;inset:0;background:color-mix(in srgb,var(--card) 94%,transparent);display:grid;place-content:center;gap:14px;padding:20px;text-align:center;z-index:2}
+.ask[hidden]{display:none}
+.ask p{font:800 28px/1.1 "Barlow Condensed";margin:0}
+.ask .row{justify-content:center}
+.ask .row button{width:56px;font-size:22px}
+h2{font:800 24px/1.1 "Barlow Condensed";margin:28px 0 8px}
+ol.plan{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+ol.plan li{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto;gap:8px;padding:9px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+ol.plan li .n{color:var(--mut);font-variant-numeric:tabular-nums}
+ol.plan li .v{color:var(--mut);white-space:nowrap}
+ol.plan li.done{opacity:.45}ol.plan li.cur{background:var(--redsoft);border-radius:8px}
+ol.plan .x{color:var(--red);font-weight:600}
+ol.plan li.rs{font-size:14px;color:var(--mut)}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 14px;margin-top:10px}
+summary{font-weight:600;min-height:44px;display:flex;align-items:center;cursor:pointer}
+.chk{display:flex;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--line)}
+.chk input{width:22px;height:22px;accent-color:var(--red)}
+.chk select{min-height:36px}
+textarea{width:100%;min-height:90px;font:14px/1.4 ui-monospace,monospace;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);padding:8px}
+.file{display:inline-flex;align-items:center;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:0 14px;font-weight:600;cursor:pointer}
+.file input{display:none}
+.note{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--red);border-radius:10px;padding:12px 14px;font-size:15px}
+.note p{margin:0 0 6px}.note p:last-child{margin:0}
+.log{font-size:15px;color:var(--mut);padding-left:18px}
+@media(max-width:600px){.body{grid-template-columns:110px minmax(0,1fr);gap:12px;padding:14px}.ring .t{font-size:34px}.ctl{padding:0 14px 14px}}
+@media(prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><h1>Antrenman</h1><div class="row prof" id="prof" role="group" aria-label="Kişi seç"></div></div>
+  <p class="sub" id="rotinfo"></p>
+  <div class="row tabs" id="tabs" role="group" aria-label="Gün seç"></div>
+  <div class="row wk">
+    <span>Hafta</span>
+    <button id="wm" aria-label="Haftayı azalt">−</button><b id="wv">1</b><button id="wp" aria-label="Haftayı artır">+</button>
+  </div>
+  <p class="next" id="nextinfo"></p>
+  <p class="alert" id="alert"></p>
+
+  <section class="clock" aria-live="polite">
+    <div class="stage"><svg id="fig" viewBox="0 0 200 140" aria-hidden="true"></svg><span class="tag" id="tag"></span></div>
+    <div class="bar"><i id="pb"></i></div>
+    <div class="body">
+      <div class="ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="9"/><circle id="arc" cx="60" cy="60" r="52" fill="none" stroke="var(--red)" stroke-width="9" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0"/></svg>
+        <div class="t"><div><span id="tv">0:00</span><small id="tl"></small></div></div>
+      </div>
+      <div>
+        <span class="phase" id="ph">Hazır</span>
+        <div class="name" id="nm"></div>
+        <p class="det" id="dt"></p>
+        <p class="tip" id="tp"></p>
+        <p class="after" id="af"></p>
+      </div>
+    </div>
+    <div class="row ctl">
+      <button id="bk" aria-label="Önceki adım">◀</button>
+      <button id="ps">Duraklat</button>
+      <button id="sk">Atla</button>
+      <button class="go" id="go">Başla</button>
+    </div>
+    <div class="ask" id="ask" hidden><p id="askq"></p><div class="row" id="askb"></div></div>
+  </section>
+
+  <h2>Bugünün planı</h2>
+  <ol class="plan" id="plan"></ol>
+
+  <h2>Ayarlar</h2>
+  <details><summary>Ekipman, ses ve barfiks seviyesi</summary><div id="eq"></div><p class="next">Her kişinin ayarları, geçmişi ve haftası ayrı tutulur. Kettlebell'i açınca sıraya kettlebell günü (D) girer. Torbayı açınca gölge boksunun yerini torba alır ve ayrı bir torba raundu günü gelir.</p></details>
+  <details><summary>Yedek al / geri yükle</summary>
+    <p class="next">Kayıtlar bu cihazda tutulur. Telefon değiştirmeden önce ya da ayda bir yedek al.</p>
+    <div class="row"><button id="bdl">Yedeği indir</button><button id="bcp">Kopyala</button><label class="file">Dosyadan yükle<input type="file" id="bfile" accept=".json,application/json"></label></div>
+    <p><textarea id="btx" placeholder="Kopyaladığın yedeği buraya yapıştır" aria-label="Yedek metni"></textarea></p>
+    <div class="row"><button id="bld">Yapıştırılanı yükle</button><span class="next" id="bmsg"></span></div>
+    <p></p>
+  </details>
+
+  <h2>Kurallar</h2>
+  <div class="note" id="notes"></div>
+
+  <h2>Geçmiş</h2>
+  <ul class="log" id="log"></ul>
+</div>
+<script src="program.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
