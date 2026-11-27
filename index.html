@@ -137,6 +137,16 @@ html.lock .wrap,html.lock .tabbar,html.lock .pv,html.lock #who{display:none!impo
 @media(max-width:600px){.prow{grid-template-columns:minmax(0,1fr) auto}.prow select{grid-column:1/-1;grid-row:2}}
 @media(max-width:600px){.body{grid-template-columns:110px minmax(0,1fr);gap:12px;padding:14px}.ring .t{font-size:34px}.ctl{padding:0 14px 14px}}
 @media(prefers-reduced-motion:reduce){.bar i{transition:none}}
+html.run .runhide{display:none}
+html.run .clock{margin-top:8px;scroll-margin-top:8px}
+.ctl [hidden]{display:none}
+.wkrow.pr{grid-template-columns:4.5em minmax(0,1fr) 1.5em;row-gap:0}.wkrow.pr small{grid-column:2/-1;font-size:12px;margin-top:-2px}
+.lx{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.55);display:grid;align-items:end;justify-items:center}
+.lx[hidden]{display:none}
+.lxc{background:var(--card);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:14px 16px max(16px,env(safe-area-inset-bottom))}
+.lxc svg{width:100%;aspect-ratio:200/140;background:var(--stage);border-radius:12px}
+.lxc h2{margin:12px 0 4px}.lxc .tip{font-size:16px}
+@media(min-width:600px){.lx{align-items:center}.lxc{border-radius:20px}}
 </style>
 </head>
 <body>
@@ -149,14 +159,14 @@ html.lock .wrap,html.lock .tabbar,html.lock .pv,html.lock #who{display:none!impo
 
   <main>
   <section class="view" data-v="antrenman" aria-label="Antrenman">
-  <p class="sub" id="rotinfo"></p>
-  <div class="row tabs" id="tabs" role="group" aria-label="Gün seç"></div>
-  <div class="row wk">
+  <p class="sub runhide" id="rotinfo"></p>
+  <div class="row tabs runhide" id="tabs" role="group" aria-label="Gün seç"></div>
+  <div class="row wk runhide">
     <span>Hafta</span>
     <button id="wm" aria-label="Haftayı azalt">−</button><b id="wv">1</b><button id="wp" aria-label="Haftayı artır">+</button>
     <button id="qk" class="qk" aria-pressed="false">Vaktim az</button>
   </div>
-  <p class="next" id="nextinfo"></p>
+  <p class="next runhide" id="nextinfo"></p>
   <section class="clock" id="clock" aria-live="polite">
     <div class="stage"><svg id="fig" viewBox="0 0 200 140" aria-hidden="true"></svg><span class="tag" id="tag"></span></div>
     <div class="bar"><i id="pb"></i></div>
@@ -201,6 +211,10 @@ html.lock .wrap,html.lock .tabbar,html.lock .pv,html.lock #who{display:none!impo
   <div class="kpi" id="kpi"></div>
   <div class="weeks" id="weeks" aria-label="Son 8 hafta"></div>
 
+  <div id="pullw" hidden><h2>Barfiks geçmişi</h2>
+  <p class="next">Son 10 antrenman. Çubuk o günkü toplam tekrar.</p>
+  <div class="weeks" id="pullh"></div></div>
+
   <div id="galw" hidden><h2>Fotoğraflar</h2>
   <p class="next">Sadece sen görebilirsin. Fotoğraflar telefona kaydedilmez, açınca hesabından gelir.</p>
   <div class="gal" id="gal"></div><p class="next" id="galmsg"></p><button id="galmore" hidden>Daha fazla</button></div>
@@ -210,9 +224,8 @@ html.lock .wrap,html.lock .tabbar,html.lock .pv,html.lock #who{display:none!impo
   </section>
   <section class="view" data-v="hareketler" aria-label="Hareketler" hidden>
   <h2>Hareketler</h2>
-  <p class="next">Dokununca Antrenman sekmesinde animasyonu oynar.</p>
+  <p class="next">Dokununca hareketin nasıl yapıldığını gösterir.</p>
   <div class="lib" id="lib"></div>
-  <p class="next" id="libmsg"></p>
 
   <h2>Kurallar</h2>
   <div class="note" id="notes"></div>
@@ -269,6 +282,11 @@ html.lock .wrap,html.lock .tabbar,html.lock .pv,html.lock #who{display:none!impo
   <div class="row" id="whob"></div>
   <div class="new"><p class="next">ya da yeni profil:</p><input id="whoname" placeholder="Adın" maxlength="20" aria-label="Ad"><select id="whotpl" aria-label="Program"></select><button id="whogo">Oluştur</button></div>
 </div>
+<div class="lx" id="lx" hidden role="dialog" aria-modal="true" aria-labelledby="lxn"><div class="lxc">
+  <svg id="lxfig" viewBox="0 0 200 140" aria-hidden="true"></svg>
+  <h2 id="lxn"></h2><p class="tip" id="lxt"></p><p class="next" id="lxd"></p>
+  <button id="lxx" class="wide">Kapat</button>
+</div></div>
 <div class="pv" id="pv" hidden role="dialog" aria-label="Fotoğraf"><img id="pvimg" alt=""><div class="row"><span id="pvt"></span><span class="row"><button id="pvdel">Sil</button><button id="pvx">Kapat</button></span></div></div>
 <div class="who gate" id="gate" hidden role="dialog" aria-label="Giriş">
   <h2>Antrenman</h2>

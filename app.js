@@ -27,7 +27,7 @@ function defaults() {
   const eq = {}, flags = {};
   for (const k in P.EQUIP) eq[k] = PR.equip.includes(k) && P.EQUIP[k].on;
   for (const k in P.FLAGS) flags[k] = P.FLAGS[k].on;
-  return { hist: [], off: 0, pull: { L: 0, fails: 0, best: 0 }, cfg: { eq, flags, kbw: P.EQUIP.kb.weight, voice: true, beep: true, rem: { days: [1, 3, 5, 6], time: '19:00' } } };
+  return { hist: [], off: 0, pull: { L: 0, fails: 0, best: 0 }, cfg: { eq, flags, kbw: P.EQUIP.kb.weight, voice: true, beep: true, prep: true, rem: { days: [1, 3, 5, 6], time: '19:00' } } };
 }
 function loadState() {
   let s = read(KEY(), null);
@@ -150,8 +150,13 @@ async function wake(on) { try { if (on && !lock && navigator.wakeLock) lock = aw
 
 /* ---------- oturum ---------- */
 let short = false, lastT = 0, week = getWeek(), day = nextDay(), steps = [], i = -1, left = 0, total = 0, end = 0, remain = 0, timer = null, paused = false, skipped = new Set(), pulls = [], doneMsg = '', started = 0;
+let prepUntil = 0, prepLeft = 0, prepRem = 0;
+const PREP = 5;
 const fmt = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 const running = () => i >= 0 && i < steps.length;
+const dayName = d => P.DAYS[d].extra ? P.DAYS[d].title : d + ' günü';
+/* süreli bir hareketten önce pozisyon almak için kısa hazırlık; dinlenmeden sonra ve EMOM dakikaları arasında gerekmez */
+const needPrep = j => { const s = steps[j], p = steps[j - 1]; if (!S.cfg.prep || !s || s.k === 'rest' || s.k === 'work') return false; if (!p) return true; return p.k !== 'rest' && !(s.k === 'emom' && p.k === 'emom') };
 
 function header() {
   const nd = nextDay(), r = rot(), keys = [...new Set(r)].concat(PR.days.filter(k => P.DAYS[k].extra && !r.includes(k))).filter(dayOk);
@@ -177,10 +182,13 @@ function set(ph, cls, nm, dt, tp, af) { $('ph').textContent = ph; $('ph').classN
 function show() {
   const s = steps[i]; $('pb').style.width = (i < 0 ? 0 : Math.min(100, i / steps.length * 100)) + '%';
   $('plus').hidden = !(s && s.k !== 'work');
+  /* antrenman sürerken gün/hafta seçimi gizlenir, sayaç ve düğmeler tek ekrana sığar */
+  document.documentElement.classList.toggle('run', running());
+  $('bk').hidden = $('ps').hidden = $('sk').hidden = !running();
   if (i >= steps.length) {
     const n = [...skipped].filter(j => steps[j].k !== 'rest').length;
     set('Bitti', '', 'Antrenman tamam', n ? n + ' hareket atlandı.' : 'Hiçbir hareketi atlamadın.', doneMsg, '');
-    $('tv').textContent = '✓'; $('tl').textContent = ''; $('go').textContent = 'Baştan'; $('tag').textContent = ''; arc(1); anim('child'); plan(); return;
+    $('tv').textContent = '✓'; $('tl').textContent = ''; $('go').textContent = 'Sıradaki: ' + dayName(nextDay()); $('tag').textContent = ''; arc(1); anim('child'); plan(); return;
   }
   if (!s) {
     set('Hazır', '', (P.DAYS[day].extra ? P.DAYS[day].title : day + ' günü: ' + P.DAYS[day].title), steps.length + ' adım · yaklaşık ' + Math.round(est() / 60) + ' dk · hafta ' + week + (short ? ' · kısa' : ''), 'iPhone\'da sessiz modu kapat, yoksa ses çıkmaz.', 'İlk hareket: ' + steps[0].name);
@@ -191,14 +199,20 @@ function show() {
   $('go').textContent = s.k === 'work' ? 'Tamam, sonraki' : 'Bitti, geç'; $('ps').textContent = paused ? 'Devam' : 'Duraklat';
   if (s.k === 'rest' && n) { $('tag').textContent = 'Sıradaki: ' + n.name; anim(n.id) } else { $('tag').textContent = ''; anim(s.id) }
   if (s.k === 'work') { const d = s.det.split(' '); $('tv').textContent = d[0]; $('tl').textContent = d.slice(1).join(' ') || 'tekrar'; arc(1) }
+  else if (prepUntil) { $('ph').textContent = 'Hazırlan'; $('tl').textContent = 'hazırlan'; $('tv').textContent = prepLeft; arc(prepLeft / PREP) }
   else { $('tl').textContent = s.k === 'rest' ? 'dinlen' : 'kalan'; $('tv').textContent = fmt(left); arc(total ? left / total : 0) }
   plan();
 }
-const est = () => steps.reduce((a, s) => a + (s.sec || 45), 0);
+const est = () => steps.reduce((a, s, j) => a + (s.sec || 45) + (needPrep(j) ? PREP : 0), 0);
 function arc(f) { $('arc').style.strokeDashoffset = 326.7 * (1 - f) }
-function stop() { clearInterval(timer); timer = null }
+function stop() { clearInterval(timer); timer = null; prepUntil = 0; prepLeft = 0 }
 function tick() {
   if (paused) return;
+  if (prepUntil) {
+    const p = Math.ceil((prepUntil - Date.now()) / 1000);
+    if (p > 0) { if (p !== prepLeft) { prepLeft = p; if (p <= 3) beep(520, 90); show() } return }
+    prepUntil = 0; prepLeft = 0; beep(880, 250); vib(60); if (end - Date.now() > 2000) say('Başla'); show();
+  }
   const r = Math.max(0, Math.ceil((end - Date.now()) / 1000));
   if (r === left) return;
   left = r; $('tv').textContent = fmt(left); arc(total ? left / total : 0);
@@ -217,7 +231,7 @@ function announce(s) {
   const n = steps[i + 1];
   if (s.k === 'rest') say('Dinlen. ' + s.sec + ' saniye. Sıradaki ' + (n ? n.name : ''));
   else if (s.k === 'work') say(s.name + '. ' + spoken(s.det));
-  else say(s.name + '. ' + (s.k === 'emom' ? spoken(s.det) : s.sec + ' saniye'));
+  else say((prepUntil ? 'Hazırlan. ' : '') + s.name + '. ' + (s.k === 'emom' ? spoken(s.det) : s.sec + ' saniye'));
 }
 const saveSess = () => write(SKEY(), { day, week, q: short, i, sk: [...skipped], pulls, started, at: Date.now() });
 const clearSess = () => drop(SKEY());
@@ -226,7 +240,11 @@ function go(j, over) {
   if (!started) started = Date.now();
   if (i >= steps.length) { finish(); show(); renderLog(); header(); stats(); return }
   const s = steps[i];
-  if (s.k !== 'work') { total = s.sec; end = Date.now() + s.sec * 1000 - (over || 0); left = Math.max(0, Math.ceil((end - Date.now()) / 1000)); beep(s.k === 'rest' ? 440 : 880, 250); timer = setInterval(tick, 200) }
+  if (s.k !== 'work') {
+    const pr = !over && needPrep(i) ? PREP : 0, now = Date.now();
+    total = s.sec; end = now + (s.sec + pr) * 1000 - (over || 0); prepUntil = pr ? now + pr * 1000 : 0; prepLeft = pr;
+    left = pr ? s.sec : Math.max(0, Math.ceil((end - now) / 1000)); beep(s.k === 'rest' ? 440 : pr ? 520 : 880, 250); timer = setInterval(tick, 200)
+  }
   else beep(880, 150);
   vib(60); announce(s); show(); saveSess(); $('resume').hidden = true;
 }
@@ -257,7 +275,7 @@ function resumeBar() {
 $('resgo').onclick = () => {
   const s = read(SKEY(), null); if (!s) return;
   day = s.day; stop(); week = s.week; short = !!s.q; steps = build(day, week, short); skipped = new Set(s.sk); pulls = s.pulls || []; started = s.started || Date.now(); doneMsg = ''; paused = false;
-  header(); wake(true); go(Math.min(s.i, steps.length - 1));
+  header(); wake(true); go(Math.min(s.i, steps.length - 1)); $('clock').scrollIntoView({ block: 'start', behavior: 'smooth' });
 };
 $('resno').onclick = () => { clearSess(); $('resume').hidden = true };
 
@@ -279,6 +297,10 @@ function stats() {
   const max = Math.max(r.length, ...weeks.map(x => x.c));
   $('kpi').innerHTML = [['Bu hafta', thisW + ' / ' + r.length], ['Toplam', S.hist.length + ' antrenman'], ['Süre', (mins >= 60 ? Math.floor(mins / 60) + ' sa ' : '') + (mins % 60) + ' dk'], ['Seri', streak + ' hafta']].concat(PR.pull ? [['Barfiks', pullText(false) + (S.pull.best ? ' · en iyi ' + S.pull.best : '')]] : []).map(x => '<div><span>' + x[0] + '</span><b>' + esc(x[1]) + '</b></div>').join('');
   $('weeks').innerHTML = weeks.map(x => '<div class="wkrow"><span>' + new Date(x.a).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + '</span><i><em style="width:' + (x.c / max * 100) + '%"></em></i><b>' + x.c + '</b></div>').join('');
+  /* barfiks geçmişi: son 10 antrenmanın setleri, çubuk = toplam tekrar */
+  const ph = PR.pull ? S.hist.filter(h => h.pu && h.pu.length).slice(0, 10) : [], pm = Math.max(1, ...ph.map(h => h.pu.reduce((a, b) => a + b, 0)));
+  $('pullw').hidden = !ph.length;
+  $('pullh').innerHTML = ph.map(h => { const t = h.pu.reduce((a, b) => a + b, 0); return '<div class="wkrow pr"><span>' + new Date(h.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + '</span><i><em style="width:' + (t / pm * 100) + '%"></em></i><b>' + t + '</b><small>setler: ' + h.pu.join(' · ') + '</small></div>' }).join('');
 }
 
 /* ---------- hareket kütüphanesi ---------- */
@@ -286,12 +308,24 @@ function library() {
   const ids = new Set(); PR.days.filter(dayOk).forEach(d => build(d, week).forEach(s => s.id && ids.add(s.id)));
   $('lib').innerHTML = [...ids].map(id => { const a = POSES[EX[id].anim]; return '<button data-id="' + id + '"><svg viewBox="0 0 200 140" aria-hidden="true">' + (a ? poseSvg(a.p[a.p.length > 1 ? 1 : 0], a.pr) : '') + '</svg><span>' + esc(EX[id].name) + '</span></button>' }).join('');
 }
-$('lib').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return; const id = b.dataset.id;
-  if (running()) { $('libmsg').textContent = 'Antrenman sürerken önizleme kapalı.'; return }
-
-  showView('antrenman', true); anim(id); set('Önizleme', '', EX[id].name, '', EX[id].tip, 'Başla\'ya basınca günün antrenmanı başlar.'); $('tag').textContent = 'Önizleme'; $('libmsg').textContent = '';
-});
+/* hareket kartı: sekme değiştirmeden animasyon, ipucu ve hangi günlerde olduğu */
+let lxRaf = 0;
+function lxOpen(id) {
+  const a = POSES[EX[id].anim], ds = PR.days.filter(dayOk).filter(d => build(d, week).some(s => s.id === id && !['Isınma', 'Soğuma'].includes(s.grp)));
+  const grp = PR.days.filter(dayOk).map(d => build(d, week).find(s => s.id === id)).find(Boolean);
+  $('lxn').textContent = EX[id].name; $('lxt').textContent = EX[id].tip;
+  $('lxd').textContent = (ds.length ? 'Günler: ' + ds.map(dayName).join(', ') : grp ? grp.grp + ' bölümünde' : '') + (lvl(id) ? ' · zorluk ayarı ' + (lvl(id) > 0 ? '+' : '') + lvl(id) : '');
+  $('lx').hidden = false; cancelAnimationFrame(lxRaf);
+  if (!a) { $('lxfig').innerHTML = PROPS.floor; return }
+  const st = performance.now(), n = a.p.length;
+  const f = ts => { if ($('lx').hidden) return; const el = Math.max(0, ts - st) / 1000 / a.d, j = Math.floor(el) % n, e = .5 - .5 * Math.cos(Math.PI * (el % 1)); $('lxfig').innerHTML = poseSvg(mix(a.p[j], a.p[(j + 1) % n], e), a.pr); lxRaf = requestAnimationFrame(f) };
+  if (reduce) $('lxfig').innerHTML = poseSvg(a.p[0], a.pr); else lxRaf = requestAnimationFrame(f);
+}
+const lxClose = () => { $('lx').hidden = true; cancelAnimationFrame(lxRaf) };
+$('lib').addEventListener('click', e => { const b = e.target.closest('button'); if (b) lxOpen(b.dataset.id) });
+$('lxx').onclick = lxClose;
+$('lx').addEventListener('click', e => { if (e.target === $('lx')) lxClose() });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('lx').hidden) lxClose() });
 
 /* ---------- barfiks sorusu ---------- */
 function askPull() {
@@ -311,6 +345,7 @@ function settings() {
   $('eq').innerHTML = PR.equip.map(k => '<label class="chk"><input type="checkbox" data-eq="' + k + '"' + (c.eq[k] ? ' checked' : '') + '> ' + esc(P.EQUIP[k].name) + '</label>' + (k === 'kb' && c.eq.kb ? '<label class="chk">Ağırlık <select id="kbw">' + P.EQUIP.kb.weights.map(w => '<option' + (w === c.kbw ? ' selected' : '') + '>' + w + '</option>').join('') + '</select> kg</label>' : '')).join('')
     + PR.flags.map(k => '<label class="chk"><input type="checkbox" data-fl="' + k + '"' + (c.flags[k] ? ' checked' : '') + '> ' + esc(P.FLAGS[k].name) + '</label>').join('')
     + '<label class="chk"><input type="checkbox" data-c="voice"' + (c.voice ? ' checked' : '') + '> Sesli koç</label><label class="chk"><input type="checkbox" data-c="beep"' + (c.beep ? ' checked' : '') + '> Bip sesleri</label>'
+    + '<label class="chk"><input type="checkbox" data-c="prep"' + (c.prep ? ' checked' : '') + '> Süreli hareketten önce ' + PREP + ' sn hazırlan</label>'
     + (PR.pull ? '<label class="chk">Barfiks seviyesi <select id="pl">' + Array.from({ length: 13 }, (_, n) => '<option value="' + n + '"' + (n === S.pull.L ? ' selected' : '') + '>' + (n === 0 ? 'sadece negatif' : n + ' tam') + '</option>').join('') + '</select></label>' : '');
   $('remdays').innerHTML = WD.map((d, k) => '<label class="pill"><input type="checkbox" data-wd="' + (k + 1) + '"' + (c.rem.days.includes(k + 1) ? ' checked' : '') + '>' + d + '</label>').join('');
   $('remtime').value = c.rem.time;
@@ -452,18 +487,19 @@ $('qk').onclick = () => { if (running() && !confirmSwitch()) return; short = !sh
 $('wm').onclick = () => { if (getWeek() > 1) { S.off--; save(); load() } };
 $('wp').onclick = () => { if (getWeek() < 12) { S.off++; save(); load() } };
 $('go').onclick = () => {
-  if (i >= steps.length) { load(); return }
-  if (i < 0) { wake(true); if (window.speechSynthesis) speechSynthesis.getVoices() }
+  if (i >= steps.length) { day = nextDay(); load(); window.scrollTo(0, 0); return }
+  if (i < 0) { wake(true); if (window.speechSynthesis) speechSynthesis.getVoices(); $('after').hidden = true }
   paused = false;
   if (steps[i] && steps[i].ask && $('ask').hidden) { askPull(); return }
-  go(i + 1);
+  go(i + 1); if (i === 0) $('clock').scrollIntoView({ block: 'start', behavior: 'smooth' });
 };
 $('sk').onclick = () => { if (!running()) return; skipped.add(i); paused = false; go(i + 1) };
 $('bk').onclick = () => { if (i > 0) { skipped.delete(i - 1); if (steps[i - 1].ask && pulls.length) pulls.pop(); paused = false; go(i - 1) } };
 $('ps').onclick = () => {
   if (!running()) return;
   paused = !paused;
-  if (paused) remain = end - Date.now(); else end = Date.now() + remain;
+  const now = Date.now();
+  if (paused) { remain = end - now; prepRem = prepUntil ? prepUntil - now : 0 } else { end = now + remain; if (prepUntil) prepUntil = now + prepRem }
   $('ps').textContent = paused ? 'Devam' : 'Duraklat';
 };
 $('plus').onclick = () => { if (!running() || steps[i].k === 'work') return; if (paused) remain += 15000; else end += 15000; total += 15; left += 15; $('tv').textContent = fmt(left) };
