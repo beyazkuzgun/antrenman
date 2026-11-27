@@ -126,13 +126,15 @@ const EX = {
   cobra:  { name: 'Kobra', tip: 'Kalça yerde, göğsü yavaşça kaldır, omuzlar aşağıda', anim: 'cobra', eq: 'mat' },
   march:  { name: 'Yerinde yürüyüş', tip: 'Dizleri kaldır, kolları salla', anim: 'march' },
   hollowk:{ name: 'Hollow (dizler bükük)', tip: 'Bel yere yapışık, zorlanırsan kolları yanda tut', anim: 'hollow', eq: 'mat' },
+  negpull:{ name: 'Negatif barfiks', tip: 'Sandalyeyle tepeye çık, 4–5 sn\'de yavaşça in, altta kollar tam açılsın', anim: 'pull', eq: 'bar' },
+  scappull:{ name: 'Kürek kemiği çekişi', tip: 'Kollar düz asılı, sadece omuzları aşağı-geri çek, 1 sn tut', anim: 'scap', eq: 'bar' },
   bridge2:{ name: 'Glute bridge', tip: 'İki ayak yerde, kalçayı sık, tepede 1 sn bekle', anim: 'bridge2', eq: 'mat' }
 };
 
 /* KOLAY VERSİYON: antrenman sırasında "Kolaylaştır"a basınca o hareket, o antrenman boyunca bununla değişir.
    Sadece programda zaten olan, daha hafif ve ayak bileğini zorlamayan hareketler. */
 const EASY = { push: 'kneepush', dia: 'kneepush', pike: 'kneepush', touch: 'kneetouch', hollow: 'hollowk', knee: 'legr', legr: 'bug', sup: 'birddog',
-  side: 'plank', bridge1: 'bridge2', squat: 'bridge2', revlunge: 'bridge2', kbswing: 'kbdl', goblet: 'kbdl', kbpress: 'kbhold' };
+  side: 'plank', bridge1: 'bridge2', squat: 'bridge2', revlunge: 'bridge2', kbswing: 'kbdl', goblet: 'kbdl', kbpress: 'kbhold', negpull: 'scappull' };
 for (const k in EASY) EX[k].easy = EASY[k];
 
 const WARM  = [{ ex: 'circ', sec: 40 }, { ex: 'cat', sec: 40 }, { ex: 'shadow', sec: 30 }, { ex: 'hang', sec: 20 }];
@@ -154,6 +156,10 @@ const DAYS = {
   D: { title: 'Kettlebell', needs: 'kb', blocks: [
     { type: 'circuit', rounds: byWeek({ 1: 3, 3: 4, 5: 5 }), rest: byWeek({ 1: 90, 3: 75 }), items: [
       { ex: 'kbdl', reps: '10 tekrar' }, { ex: 'kbrow', reps: '10 + 10' }, { ex: 'kbpress', reps: '8 + 8' }, { ex: 'kbbridge', reps: '15 tekrar' }, { ex: 'kbswing', reps: '15 tekrar' }, { ex: 'goblet', reps: '10 tekrar' }, { ex: 'kbhold', sec: 60, note: '30 sn sağ, 30 sn sol' }] }] },
+  H: { title: 'Kas: sırt, omuz, göğüs', blocks: [
+    { type: 'circuit', rounds: byWeek({ 1: 3, 3: 4, 5: 5 }), rest: byWeek({ 1: 90, 4: 75 }), items: [
+      { ex: 'negpull', reps: '4 tekrar' }, { ex: 'push', reps: '10–12 tekrar, 3 sn\'de in' }, { ex: 'kbrow', reps: '10 + 10' }, { ex: 'pike', reps: '8–10 tekrar' },
+      { ex: 'scappull', reps: '10 tekrar' }, { ex: 'kbpress', reps: '8 + 8' }, { ex: 'dia', reps: 'Bitene kadar, formu bozmadan' }] }] },
   T: { title: 'Torba raundu', needs: 'bag', extra: true, blocks: [
     { type: 'rounds', ex: 'bag', rounds: byWeek({ 1: 3, 3: 4, 5: 5 }), work: 180, rest: 60, combos: COMBOS }] },
   K: { title: 'Ayak bileği', extra: true, noWarm: true, noCool: true, blocks: [] },
@@ -176,10 +182,11 @@ const DAYS = {
    Profiller (kişiler) uygulamanın içinden eklenir; DEFAULT_PROFILES ilk açılışta gelenler. */
 const TEMPLATES = {
   ekipman: {
-    name: 'Ekipmanlı: barfiks, kettlebell, torba + ayak bileği', days: ['A', 'B', 'C', 'D', 'T', 'K'], equip: ['bar', 'mat', 'kb', 'bag'], flags: ['cleared'], warm: WARM, ankle: true, pull: true,
-    rotation: eq => eq.kb ? ['A', 'B', 'D', 'C'] : ['A', 'B', 'A', 'C'],
+    name: 'Ekipmanlı: barfiks, kettlebell, torba + ayak bileği', days: ['A', 'B', 'C', 'D', 'H', 'T', 'K'], equip: ['bar', 'mat', 'kb', 'bag'], flags: ['cleared'], warm: WARM, ankle: true, pull: true,
+    rotation: eq => eq.kb ? ['A', 'H', 'D', 'C'] : ['A', 'H', 'B', 'C'],
     notes: ['Ayak bileği sakatlığından dönerken zıplama, derin çömelme ve hamle (lunge) yok. Barfiksten atlayarak inme, sandalyeye bas.',
       'Keskin ağrı ya da bir gecede inmeyen şişlik olursa ayak bileği hareketlerini bırak ve doktora sor.',
+      'H günü kas için: hareketleri yavaş yap, son 1–2 tekrar zor gelmeli. Kas gelişimi için günde yeterli protein al ve iyi uyu.',
       'Barfiks: A gününde her setten sonra kaç tekrar yaptığını gir. Bütün setlerde hedefi tutarsan seviye yükselir, iki antrenman üst üste tutmazsa bir iner.']
   },
   mat: {
