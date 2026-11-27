@@ -16,7 +16,10 @@ const EQUIP = {
   kb:  { name: 'Kettlebell', on: false, weights: [8, 12, 16, 20, 24], weight: 16 },
   bag: { name: 'Boks torbası', on: false },
   bench: { name: 'Bench sehpası', on: true },
-  db:  { name: 'Dambıl (ayarlanabilir)', on: false }
+  db:  { name: 'Dambıl (ayarlanabilir)', on: false },
+  band: { name: 'Direnç bandı', on: false },
+  rings: { name: 'Jimnastik halkası', on: false },
+  dip: { name: 'Dips istasyonu', on: false }
 };
 const FLAGS = {
   cleared: { name: 'Doktor onayı: swing ve goblet squat serbest', on: false }
@@ -73,6 +76,13 @@ const POSES = {
   dbrear: { p: [HINGE + 'E128,80 W128,98 D128,100', HINGE + 'E118,62 W106,56 D106,54'], d: 1.3, pr: 'floor' },
   dbcurl: { p: [ST + 'E100,66 W102,86 D102,88', ST + 'E100,66 W114,52 D114,50'], d: 1.3, pr: 'floor' },
   dbtri:  { p: [ST + 'E104,22 W104,4 D104,2 e106,22 w105,5', ST + 'E106,22 W92,36 D92,38 e108,22 w94,36'], d: 1.4, pr: 'floor' },
+  facepull:{ p: [ST + 'E116,46 W130,44', ST + 'E86,40 W104,34'], d: 1.3, pr: 'wall' },
+  ringrow:{ p: ['H138,96 N126,100 P88,114 K69,121 F50,127 T56,128 E128,84 W130,68', 'H131,70 N120,80 P86,104 K68,116 F50,127 T56,128 E106,82 W130,68'], d: 1.3, pr: 'rings' },
+  dip:    { p: ['H100,16 N100,30 P100,70 E98,46 W100,64 K96,94 F80,104', 'H103,34 N100,48 P98,86 E82,48 W100,64 K94,110 F78,118'], d: 1.4, pr: 'dip' },
+  thrust: { p: ['H170,90 N158,92 P126,94 K102,96 F100,128 T110,128 E146,98 W132,96', 'H170,90 N158,92 P124,116 K102,104 F100,128 T110,128 E146,104 W130,112'], d: 1.4, pr: 'bench' },
+  dbthrust:{ p: ['H170,90 N158,92 P126,94 K102,96 F100,128 T110,128 E142,98 W128,90 D126,88', 'H170,90 N158,92 P124,116 K102,104 F100,128 T110,128 E142,110 W128,110 D126,108'], d: 1.4, pr: 'bench' },
+  dbrdl:  { p: [SS + 'E102,62 W104,82 D104,84', HINGE + 'E128,82 W128,100 D128,102'], d: 1.5, pr: 'floor' },
+  legcurl:{ p: [LIE + 'E126,126 W112,127 K75,124 F50,124 T44,126', 'H152,121 N140,121 P100,110 E126,126 W112,127 K78,96 F84,124 T78,126'], d: 1.5, pr: 'floor' },
   child:  { p: ['H128,121 N118,118 P72,112 E140,124 W158,126 K90,127 F66,128', 'H128,120 N118,116 P74,110 E140,123 W158,126 K90,127 F66,128'], d: 2.5, pr: 'floor' },
   chest:  { p: [SS + 'E86,44 W72,42', 'H108,30 N103,42 P99,82 K99,106 F100,126 T110,128 E88,44 W72,42'], d: 2.5, pr: 'wallL' },
   cross:  { p: [ST + 'E116,48 W132,48 e110,60 w114,48', ST + 'E118,46 W134,44 e110,58 w115,46'], d: 2.5, pr: 'floor' },
@@ -124,6 +134,14 @@ const EX = {
   dbrear: { name: 'Arka omuz açışı', tip: 'Öne eğil, sırt düz, hafif ağırlıkla kolları yana aç', anim: 'dbrear', eq: 'db' },
   dbcurl: { name: 'Dambıl biceps curl', tip: 'Dirsekler gövdede sabit, sallanmadan', anim: 'dbcurl', eq: 'db' },
   dbtri:  { name: 'Baş üstü triceps uzatma', tip: 'Tek dambılı iki elle tut, dirsekler öne bakar', anim: 'dbtri', eq: 'db' },
+  bandpull:{ name: 'Bantlı barfiks', tip: 'Bandı bara bağla, dizini ya da ayağını banda koy; tepede çene barın üstünde', anim: 'pull', eq: ['bar', 'band'] },
+  facepull:{ name: 'Bantlı face pull', tip: 'Bandı göz hizasına bağla, ipi yüzüne çek, dirsekler yukarıda', anim: 'facepull', eq: 'band' },
+  ringrow:{ name: 'Halkada row', tip: 'Gövde dümdüz, göğsü halkalara çek; ayakları ileri aldıkça zorlaşır', anim: 'ringrow', eq: 'rings' },
+  dip:    { name: 'Dips', tip: 'Omuzlar aşağıda, dirsek 90 dereceye kadar in; gövde hafif öne', anim: 'dip', eq: 'dip' },
+  thrust: { name: 'Sehpada hip thrust', tip: 'Kürek kemikleri sehpa kenarında, kalçayı sık, tepede 1 sn bekle', anim: 'thrust', eq: 'bench' },
+  dbthrust:{ name: 'Dambıllı hip thrust', tip: 'Dambıl kalçanın üstünde, iki elle tut; tepede kalçayı sık', anim: 'dbthrust', eq: ['db', 'bench'] },
+  dbrdl:  { name: 'Dambıl Romanian deadlift', tip: 'Dizler hafif bükük, kalçayı geriye it, dambıllar bacağa yakın', anim: 'dbrdl', eq: 'db' },
+  legcurl:{ name: 'Havluyla bacak bükme', tip: 'Topuklar havluda, kalça havada, havluyu kendine çek', anim: 'legcurl', eq: 'mat' },
   bag:    { name: 'Torba', tip: 'Ayaklar sabit, pivot yok', anim: 'bag', eq: 'bag' },
   child:  { name: 'Çocuk pozu', tip: 'Kalça topuklara, kollar ileri, derin nefes', anim: 'child', eq: 'mat' },
   chest:  { name: 'Göğüs esnetme', tip: 'Kol duvarda omuz hizasında, gövdeyi hafif öne çevir', anim: 'chest' },
@@ -148,7 +166,7 @@ const EX = {
 /* KOLAY VERSİYON: antrenman sırasında "Kolaylaştır"a basınca o hareket, o antrenman boyunca bununla değişir.
    Sadece programda zaten olan, daha hafif ve ayak bileğini zorlamayan hareketler. */
 const EASY = { push: 'kneepush', dia: 'kneepush', pike: 'kneepush', touch: 'kneetouch', hollow: 'hollowk', knee: 'legr', legr: 'bug', sup: 'birddog',
-  side: 'plank', bridge1: 'bridge2', squat: 'bridge2', revlunge: 'bridge2', kbswing: 'kbdl', goblet: 'kbdl', kbpress: 'kbhold', negpull: 'scappull', dbbench: 'push', dbpress: 'pike' };
+  side: 'plank', bridge1: 'bridge2', squat: 'bridge2', revlunge: 'bridge2', kbswing: 'kbdl', goblet: 'kbdl', kbpress: 'kbhold', negpull: 'scappull', dbbench: 'push', dbpress: 'pike', bandpull: 'scappull', dip: 'push', dbthrust: 'thrust', thrust: 'bridge2' };
 for (const k in EASY) EX[k].easy = EASY[k];
 
 const WARM  = [{ ex: 'circ', sec: 40 }, { ex: 'cat', sec: 40 }, { ex: 'shadow', sec: 30 }, { ex: 'hang', sec: 20 }];
@@ -172,9 +190,13 @@ const DAYS = {
       { ex: 'kbdl', reps: '10 tekrar' }, { ex: 'kbrow', reps: '10 + 10' }, { ex: 'kbpress', reps: '8 + 8' }, { ex: 'kbbridge', reps: '15 tekrar' }, { ex: 'kbswing', reps: '15 tekrar' }, { ex: 'goblet', reps: '10 tekrar' }, { ex: 'kbhold', sec: 60, note: '30 sn sağ, 30 sn sol' }] }] },
   H: { title: 'Kas: sırt, omuz, göğüs', blocks: [
     { type: 'circuit', rounds: byWeek({ 1: 3, 3: 4, 5: 5 }), rest: byWeek({ 1: 90, 4: 75 }), items: [
-      { ex: 'negpull', reps: '4 tekrar' }, { ex: 'push', alt: 'dbbench', reps: '10–12 tekrar, 3 sn\'de in' }, { ex: 'kbrow', alt: 'dbrow', reps: '10 + 10' }, { ex: 'pike', alt: 'dbpress', reps: '8–10 tekrar' },
-      { ex: 'scappull', reps: '10 tekrar' }, { ex: 'kbpress', reps: '8 + 8' }, { ex: 'dbrear', reps: '12–15 tekrar' }, { ex: 'dbcurl', reps: '10–12 tekrar' }, { ex: 'dbtri', reps: '10–12 tekrar' },
-      { ex: 'dia', reps: 'Bitene kadar, formu bozmadan' }] }] },
+      { ex: 'negpull', alt: 'bandpull', reps: '4 tekrar' }, { ex: 'push', alt: 'dbbench', reps: '10–12 tekrar, 3 sn\'de in' }, { ex: 'kbrow', alt: 'dbrow', reps: '10 + 10' }, { ex: 'pike', alt: 'dbpress', reps: '8–10 tekrar' },
+      { ex: 'scappull', alt: 'ringrow', reps: '10 tekrar' }, { ex: 'kbpress', reps: '8 + 8' }, { ex: 'facepull', reps: '15 tekrar' }, { ex: 'dbrear', reps: '12–15 tekrar' }, { ex: 'dbcurl', reps: '10–12 tekrar' }, { ex: 'dbtri', reps: '10–12 tekrar' },
+      { ex: 'dia', alt: 'dip', reps: 'Bitene kadar, formu bozmadan' }] }] },
+  L: { title: 'Bacak, kalça + karın', blocks: [
+    { type: 'circuit', rounds: byWeek({ 1: 3, 3: 4 }), rest: byWeek({ 1: 75, 3: 60 }), items: [
+      { ex: 'thrust', alt: 'dbthrust', reps: '12 tekrar' }, { ex: 'kbdl', alt: 'dbrdl', reps: '10–12 tekrar' }, { ex: 'legcurl', reps: '10 tekrar' },
+      { ex: 'bridge1', reps: '10 + 10' }, { ex: 'side', reps: '10 + 10' }, { ex: 'bug', reps: '10 + 10' }] }] },
   T: { title: 'Torba raundu', needs: 'bag', extra: true, blocks: [
     { type: 'rounds', ex: 'bag', rounds: byWeek({ 1: 3, 3: 4, 5: 5 }), work: 180, rest: 60, combos: COMBOS }] },
   K: { title: 'Ayak bileği', extra: true, noWarm: true, noCool: true, blocks: [] },
@@ -197,8 +219,8 @@ const DAYS = {
    Profiller (kişiler) uygulamanın içinden eklenir; DEFAULT_PROFILES ilk açılışta gelenler. */
 const TEMPLATES = {
   ekipman: {
-    name: 'Ekipmanlı: barfiks, kettlebell, torba + ayak bileği', days: ['A', 'B', 'C', 'D', 'H', 'T', 'K'], equip: ['bar', 'mat', 'kb', 'bag', 'bench', 'db'], flags: ['cleared'], warm: WARM, ankle: true, pull: true,
-    rotation: eq => eq.kb ? ['A', 'H', 'D', 'C'] : ['A', 'H', 'B', 'C'],
+    name: 'Ekipmanlı: barfiks, kettlebell, torba + ayak bileği', days: ['A', 'B', 'C', 'D', 'H', 'L', 'T', 'K'], equip: ['bar', 'mat', 'kb', 'bag', 'bench', 'db', 'band', 'rings', 'dip'], flags: ['cleared'], warm: WARM, ankle: true, pull: true,
+    rotation: eq => eq.kb ? ['A', 'H', 'D', 'L'] : ['A', 'H', 'B', 'L'],
     notes: ['Ayak bileği sakatlığından dönerken zıplama, derin çömelme ve hamle (lunge) yok. Barfiksten atlayarak inme, sandalyeye bas.',
       'Keskin ağrı ya da bir gecede inmeyen şişlik olursa ayak bileği hareketlerini bırak ve doktora sor.',
       'H günü kas için: hareketleri yavaş yap, son 1–2 tekrar zor gelmeli. Dambılda 10–12 tekrarı zor bitirebildiğin ağırlığı seç; hepsi kolaylaşınca ağırlığı artır. Kas gelişimi için günde yeterli protein al ve iyi uyu.',

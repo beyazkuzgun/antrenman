@@ -54,6 +54,8 @@ const PROPS = {
   wall: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="131" y1="0" x2="131" y2="131" stroke="var(--mut)" stroke-width="4"/>',
   wallL: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="69" y1="0" x2="69" y2="131" stroke="var(--mut)" stroke-width="4"/>',
   bench: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><rect x="78" y="94" width="90" height="6" rx="2" fill="var(--mut)"/><path d="M92 100V131M154 100V131" stroke="var(--mut)" stroke-width="3"/>',
+  rings: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="130" y1="0" x2="130" y2="62" stroke="var(--mut)" stroke-width="2"/><circle cx="130" cy="68" r="6" fill="none" stroke="var(--mut)" stroke-width="3"/>',
+  dip: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="64" y1="64" x2="136" y2="64" stroke="var(--mut)" stroke-width="4" stroke-linecap="round"/><path d="M70 64V131M130 64V131" stroke="var(--mut)" stroke-width="3"/>',
   bag: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="162" y1="0" x2="162" y2="16" stroke="var(--mut)" stroke-width="2"/><rect x="152" y="16" width="20" height="82" rx="8" fill="var(--acc)" opacity=".85"/>'
 };
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
