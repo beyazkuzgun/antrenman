@@ -53,6 +53,7 @@ const PROPS = {
   chair: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><path d="M76 56V131M76 95H104M102 95V131" stroke="var(--mut)" stroke-width="3" fill="none"/><rect x="110" y="126" width="44" height="4" rx="2" fill="var(--acc)"/>',
   wall: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="131" y1="0" x2="131" y2="131" stroke="var(--mut)" stroke-width="4"/>',
   wallL: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="69" y1="0" x2="69" y2="131" stroke="var(--mut)" stroke-width="4"/>',
+  bench: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><rect x="78" y="94" width="90" height="6" rx="2" fill="var(--mut)"/><path d="M92 100V131M154 100V131" stroke="var(--mut)" stroke-width="3"/>',
   bag: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="162" y1="0" x2="162" y2="16" stroke="var(--mut)" stroke-width="2"/><rect x="152" y="16" width="20" height="82" rx="8" fill="var(--acc)" opacity=".85"/>'
 };
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -62,7 +63,8 @@ function poseSvg(p, pr) {
   const M = p.M || [(p.N[0] + p.P[0]) / 2, (p.N[1] + p.P[1]) / 2], far = 'var(--far)';
   let kb = '';
   if (p.B) kb = '<circle cx="' + p.B[0].toFixed(1) + '" cy="' + (p.B[1] + 2).toFixed(1) + '" r="7" fill="var(--mut)"/><circle cx="' + p.B[0].toFixed(1) + '" cy="' + (p.B[1] - 6).toFixed(1) + '" r="3.5" fill="none" stroke="var(--mut)" stroke-width="2.5"/>';
-  return (PROPS[pr] || PROPS.floor) + L(p.N, p.e, far) + L(p.e, p.w, far) + L(p.P, p.k, far) + L(p.k, p.f, far) + L(p.f, p.t, far) + L(p.N, M) + L(M, p.P) + L(p.N, p.E) + L(p.E, p.W) + kb + L(p.P, p.K) + L(p.K, p.F) + L(p.F, p.T) + '<circle cx="' + p.H[0].toFixed(1) + '" cy="' + p.H[1].toFixed(1) + '" r="8.5" fill="var(--acc)"/>';
+  const db = (q, c) => q ? '<rect x="' + (q[0] - 9).toFixed(1) + '" y="' + (q[1] - 2).toFixed(1) + '" width="18" height="4" rx="2" fill="' + c + '"/><rect x="' + (q[0] - 10).toFixed(1) + '" y="' + (q[1] - 5).toFixed(1) + '" width="5" height="10" rx="1.5" fill="' + c + '"/><rect x="' + (q[0] + 5).toFixed(1) + '" y="' + (q[1] - 5).toFixed(1) + '" width="5" height="10" rx="1.5" fill="' + c + '"/>' : '';
+  return (PROPS[pr] || PROPS.floor) + L(p.N, p.e, far) + L(p.e, p.w, far) + db(p.d, far) + L(p.P, p.k, far) + L(p.k, p.f, far) + L(p.f, p.t, far) + L(p.N, M) + L(M, p.P) + L(p.N, p.E) + L(p.E, p.W) + kb + db(p.D, 'var(--mut)') + L(p.P, p.K) + L(p.K, p.F) + L(p.F, p.T) + '<circle cx="' + p.H[0].toFixed(1) + '" cy="' + p.H[1].toFixed(1) + '" r="8.5" fill="var(--acc)"/>';
 }
 function frame(ts) {
   if (!cur) return;
@@ -80,7 +82,7 @@ function anim(id) {
 }
 
 /* ---------- program kurulumu ---------- */
-const avail = id => { const x = EX[id]; return x && (!x.eq || S.cfg.eq[x.eq]) && (!x.flag || S.cfg.flags[x.flag]) };
+const avail = id => { const x = EX[id]; return x && (!x.eq || [].concat(x.eq).every(k => S.cfg.eq[k])) && (!x.flag || S.cfg.flags[x.flag]) };
 const pick = it => it.alt && avail(it.alt) ? it.alt : it.ex;
 function pullText(emom) {
   const l = S.pull.L;

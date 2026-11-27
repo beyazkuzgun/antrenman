@@ -14,7 +14,9 @@ const EQUIP = {
   bar: { name: 'Barfiks demiri', on: true },
   mat: { name: 'Yoga matı', on: true },
   kb:  { name: 'Kettlebell', on: false, weights: [8, 12, 16, 20, 24], weight: 16 },
-  bag: { name: 'Boks torbası', on: false }
+  bag: { name: 'Boks torbası', on: false },
+  bench: { name: 'Bench sehpası', on: true },
+  db:  { name: 'Dambıl (ayarlanabilir)', on: false }
 };
 const FLAGS = {
   cleared: { name: 'Doktor onayı: swing ve goblet squat serbest', on: false }
@@ -65,6 +67,12 @@ const POSES = {
   kbswing:{ p: ['H134,58 N124,62 P90,82 K100,104 F100,126 T110,128 E112,84 W100,100 B98,108', 'H104,34 N100,46 P100,84 K100,106 F100,126 T110,128 E118,48 W138,48 B146,48'], d: .9, pr: 'floor' },
   goblet: { p: [SS + 'E108,58 W110,50 B114,52', 'H100,54 N94,66 P80,106 K108,106 F100,126 T110,128 E108,80 W112,72 B116,74'], d: 1.6, pr: 'floor' },
   /* soğuma */
+  dbbench:{ p: ['H160,86 N146,90 P104,90 K82,98 F78,128 T88,128 E134,100 W140,80 D140,78', 'H160,86 N146,90 P104,90 K82,98 F78,128 T88,128 E144,70 W143,50 D143,48'], d: 1.4, pr: 'bench' },
+  dbrow:  { p: ['H150,64 N138,70 P96,72 K90,100 F88,128 T98,128 k96,94 f74,94 e140,84 w142,94 E138,90 W138,108 D138,110', 'H150,64 N138,70 P96,72 K90,100 F88,128 T98,128 k96,94 f74,94 e140,84 w142,94 E120,62 W126,80 D126,82'], d: 1.3, pr: 'bench' },
+  dbpress:{ p: ['H100,38 N100,52 P100,90 K128,92 F130,128 T140,128 E86,58 W90,40 D90,38 e114,58 w110,40 d110,38', 'H100,38 N100,52 P100,90 K128,92 F130,128 T140,128 E94,32 W94,12 D94,10 e106,32 w106,12 d106,10'], d: 1.4, pr: 'bench' },
+  dbrear: { p: [HINGE + 'E128,80 W128,98 D128,100', HINGE + 'E118,62 W106,56 D106,54'], d: 1.3, pr: 'floor' },
+  dbcurl: { p: [ST + 'E100,66 W102,86 D102,88', ST + 'E100,66 W114,52 D114,50'], d: 1.3, pr: 'floor' },
+  dbtri:  { p: [ST + 'E104,22 W104,4 D104,2 e106,22 w105,5', ST + 'E106,22 W92,36 D92,38 e108,22 w94,36'], d: 1.4, pr: 'floor' },
   child:  { p: ['H128,121 N118,118 P72,112 E140,124 W158,126 K90,127 F66,128', 'H128,120 N118,116 P74,110 E140,123 W158,126 K90,127 F66,128'], d: 2.5, pr: 'floor' },
   chest:  { p: [SS + 'E86,44 W72,42', 'H108,30 N103,42 P99,82 K99,106 F100,126 T110,128 E88,44 W72,42'], d: 2.5, pr: 'wallL' },
   cross:  { p: [ST + 'E116,48 W132,48 e110,60 w114,48', ST + 'E118,46 W134,44 e110,58 w115,46'], d: 2.5, pr: 'floor' },
@@ -110,6 +118,12 @@ const EX = {
   kbhold: { name: 'Tek el kettlebell tutma', tip: 'Dik dur, gövde yana eğilmesin', anim: 'kbhold', eq: 'kb' },
   kbswing:{ name: 'Kettlebell swing', tip: 'Güç kalçadan gelir, kollar sadece taşır', anim: 'kbswing', eq: 'kb', flag: 'cleared' },
   goblet: { name: 'Goblet squat', tip: 'Topuklar yerde, ağrısız derinliğe kadar', anim: 'goblet', eq: 'kb', flag: 'cleared' },
+  dbbench:{ name: 'Dambıl bench press', tip: 'Kürek kemikleri sehpaya yapışık, dambılları göğüs hizasına indir', anim: 'dbbench', eq: ['db', 'bench'] },
+  dbrow:  { name: 'Sehpada tek kol dambıl row', tip: 'Bir el ve diz sehpada, dirseği kalçaya doğru çek', anim: 'dbrow', eq: ['db', 'bench'] },
+  dbpress:{ name: 'Oturarak dambıl omuz press', tip: 'Sırt dik, karın sıkı, dambılları başın üstünde birleştir', anim: 'dbpress', eq: ['db', 'bench'] },
+  dbrear: { name: 'Arka omuz açışı', tip: 'Öne eğil, sırt düz, hafif ağırlıkla kolları yana aç', anim: 'dbrear', eq: 'db' },
+  dbcurl: { name: 'Dambıl biceps curl', tip: 'Dirsekler gövdede sabit, sallanmadan', anim: 'dbcurl', eq: 'db' },
+  dbtri:  { name: 'Baş üstü triceps uzatma', tip: 'Tek dambılı iki elle tut, dirsekler öne bakar', anim: 'dbtri', eq: 'db' },
   bag:    { name: 'Torba', tip: 'Ayaklar sabit, pivot yok', anim: 'bag', eq: 'bag' },
   child:  { name: 'Çocuk pozu', tip: 'Kalça topuklara, kollar ileri, derin nefes', anim: 'child', eq: 'mat' },
   chest:  { name: 'Göğüs esnetme', tip: 'Kol duvarda omuz hizasında, gövdeyi hafif öne çevir', anim: 'chest' },
@@ -134,7 +148,7 @@ const EX = {
 /* KOLAY VERSİYON: antrenman sırasında "Kolaylaştır"a basınca o hareket, o antrenman boyunca bununla değişir.
    Sadece programda zaten olan, daha hafif ve ayak bileğini zorlamayan hareketler. */
 const EASY = { push: 'kneepush', dia: 'kneepush', pike: 'kneepush', touch: 'kneetouch', hollow: 'hollowk', knee: 'legr', legr: 'bug', sup: 'birddog',
-  side: 'plank', bridge1: 'bridge2', squat: 'bridge2', revlunge: 'bridge2', kbswing: 'kbdl', goblet: 'kbdl', kbpress: 'kbhold', negpull: 'scappull' };
+  side: 'plank', bridge1: 'bridge2', squat: 'bridge2', revlunge: 'bridge2', kbswing: 'kbdl', goblet: 'kbdl', kbpress: 'kbhold', negpull: 'scappull', dbbench: 'push', dbpress: 'pike' };
 for (const k in EASY) EX[k].easy = EASY[k];
 
 const WARM  = [{ ex: 'circ', sec: 40 }, { ex: 'cat', sec: 40 }, { ex: 'shadow', sec: 30 }, { ex: 'hang', sec: 20 }];
@@ -158,8 +172,9 @@ const DAYS = {
       { ex: 'kbdl', reps: '10 tekrar' }, { ex: 'kbrow', reps: '10 + 10' }, { ex: 'kbpress', reps: '8 + 8' }, { ex: 'kbbridge', reps: '15 tekrar' }, { ex: 'kbswing', reps: '15 tekrar' }, { ex: 'goblet', reps: '10 tekrar' }, { ex: 'kbhold', sec: 60, note: '30 sn sağ, 30 sn sol' }] }] },
   H: { title: 'Kas: sırt, omuz, göğüs', blocks: [
     { type: 'circuit', rounds: byWeek({ 1: 3, 3: 4, 5: 5 }), rest: byWeek({ 1: 90, 4: 75 }), items: [
-      { ex: 'negpull', reps: '4 tekrar' }, { ex: 'push', reps: '10–12 tekrar, 3 sn\'de in' }, { ex: 'kbrow', reps: '10 + 10' }, { ex: 'pike', reps: '8–10 tekrar' },
-      { ex: 'scappull', reps: '10 tekrar' }, { ex: 'kbpress', reps: '8 + 8' }, { ex: 'dia', reps: 'Bitene kadar, formu bozmadan' }] }] },
+      { ex: 'negpull', reps: '4 tekrar' }, { ex: 'push', alt: 'dbbench', reps: '10–12 tekrar, 3 sn\'de in' }, { ex: 'kbrow', alt: 'dbrow', reps: '10 + 10' }, { ex: 'pike', alt: 'dbpress', reps: '8–10 tekrar' },
+      { ex: 'scappull', reps: '10 tekrar' }, { ex: 'kbpress', reps: '8 + 8' }, { ex: 'dbrear', reps: '12–15 tekrar' }, { ex: 'dbcurl', reps: '10–12 tekrar' }, { ex: 'dbtri', reps: '10–12 tekrar' },
+      { ex: 'dia', reps: 'Bitene kadar, formu bozmadan' }] }] },
   T: { title: 'Torba raundu', needs: 'bag', extra: true, blocks: [
     { type: 'rounds', ex: 'bag', rounds: byWeek({ 1: 3, 3: 4, 5: 5 }), work: 180, rest: 60, combos: COMBOS }] },
   K: { title: 'Ayak bileği', extra: true, noWarm: true, noCool: true, blocks: [] },
@@ -182,11 +197,11 @@ const DAYS = {
    Profiller (kişiler) uygulamanın içinden eklenir; DEFAULT_PROFILES ilk açılışta gelenler. */
 const TEMPLATES = {
   ekipman: {
-    name: 'Ekipmanlı: barfiks, kettlebell, torba + ayak bileği', days: ['A', 'B', 'C', 'D', 'H', 'T', 'K'], equip: ['bar', 'mat', 'kb', 'bag'], flags: ['cleared'], warm: WARM, ankle: true, pull: true,
+    name: 'Ekipmanlı: barfiks, kettlebell, torba + ayak bileği', days: ['A', 'B', 'C', 'D', 'H', 'T', 'K'], equip: ['bar', 'mat', 'kb', 'bag', 'bench', 'db'], flags: ['cleared'], warm: WARM, ankle: true, pull: true,
     rotation: eq => eq.kb ? ['A', 'H', 'D', 'C'] : ['A', 'H', 'B', 'C'],
     notes: ['Ayak bileği sakatlığından dönerken zıplama, derin çömelme ve hamle (lunge) yok. Barfiksten atlayarak inme, sandalyeye bas.',
       'Keskin ağrı ya da bir gecede inmeyen şişlik olursa ayak bileği hareketlerini bırak ve doktora sor.',
-      'H günü kas için: hareketleri yavaş yap, son 1–2 tekrar zor gelmeli. Kas gelişimi için günde yeterli protein al ve iyi uyu.',
+      'H günü kas için: hareketleri yavaş yap, son 1–2 tekrar zor gelmeli. Dambılda 10–12 tekrarı zor bitirebildiğin ağırlığı seç; hepsi kolaylaşınca ağırlığı artır. Kas gelişimi için günde yeterli protein al ve iyi uyu.',
       'Barfiks: A gününde her setten sonra kaç tekrar yaptığını gir. Bütün setlerde hedefi tutarsan seviye yükselir, iki antrenman üst üste tutmazsa bir iner.']
   },
   mat: {
