@@ -93,21 +93,22 @@ const tunable = (id, grp) => !FIXED.includes(grp) && EX[id] && !EX[id].track && 
 const lvl = id => (S.adj && S.adj[id]) || 0;
 const scaleReps = (r, L) => !L || !/tekrar|dokunuş|sn tut|^\d+ \+ \d+$/.test(r) || /dinlen/.test(r) ? r : r.replace(/\d+/g, n => Math.max(1, Math.round(n * (1 + .15 * L))));
 const scaleSec = (v, L) => L ? Math.max(10, Math.round(v * (1 + .15 * L) / 5) * 5) : v;
-function mk(it, grp, emom) {
+function mk(it, grp, emom, sw) {
   if (it.rest) return { k: 'rest', name: 'Dinlen', sec: it.rest, grp };
-  const id = pick(it); if (!avail(id)) return null;
+  let id = pick(it); if (!avail(id)) return null;
+  for (let k = 0; k < 4 && sw && sw[id] && avail(sw[id]); k++) id = sw[id];
   const x = EX[id], kb = x.eq === 'kb' ? ' · ' + S.cfg.kbw + ' kg' : '';
   if (tunable(id, grp)) { const L = lvl(id); if (L) { it = { ...it }; if (it.reps) it.reps = scaleReps(it.reps, L); if (it.sec && !it.note) it.sec = scaleSec(it.sec, L) } }
-  const s = { id, name: x.name + (it.side ? ' (' + it.side + ')' : ''), tip: x.tip, grp };
+  const s = { id, name: x.name + (it.side ? ' (' + it.side + ')' : ''), tip: x.tip, grp, side: it.side };
   if (emom) return { ...s, k: 'emom', sec: 60, det: (x.track === 'pull' ? pullText(true) : it.reps) + kb };
   if (it.sec) return { ...s, k: 'time', sec: it.sec, det: (it.note || it.sec + ' sn') + kb };
   const pt = x.track === 'pull' && PR.pull;
   return { ...s, k: 'work', det: (x.track === 'pull' ? pullText(false) : it.reps) + kb, ask: pt };
 }
-function build(dk, w, q) {
+function build(dk, w, q, sw) {
   const half = n => q ? Math.max(1, Math.ceil(n / 2)) : n;
   const d = P.DAYS[dk]; let s = [];
-  const add = (it, g, em) => { const x = mk(it, g, em); if (x) s.push(x) };
+  const add = (it, g, em) => { const x = mk(it, g, em, sw); if (x) s.push(x) };
   if (!d.noWarm) PR.warm.forEach(it => add(it, 'Isınma'));
   for (const b of d.blocks) {
     if (b.type === 'circuit') {
@@ -150,7 +151,7 @@ async function wake(on) { try { if (on && !lock && navigator.wakeLock) lock = aw
 
 /* ---------- oturum ---------- */
 let short = false, lastT = 0, week = getWeek(), day = nextDay(), steps = [], i = -1, left = 0, total = 0, end = 0, remain = 0, timer = null, paused = false, skipped = new Set(), pulls = [], doneMsg = '', started = 0;
-let prepUntil = 0, prepLeft = 0, prepRem = 0;
+let prepUntil = 0, prepLeft = 0, prepRem = 0, swaps = {};
 const PREP = 5;
 const fmt = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 const running = () => i >= 0 && i < steps.length;
@@ -172,19 +173,22 @@ function header() {
   if (g !== null && g > 10) msg.push(g + ' gündür ara verdin, hafta bir geri alındı. Dinlenmeleri ihtiyacın kadar uzat.');
   else if (g !== null && g >= 4) msg.push(g + ' gündür ara verdin. Program kaldığın yerden, ' + nd + ' gününden devam ediyor.');
   if (last && last.sk && last.sk.length) msg.push('Son antrenmanda atladığın: ' + last.sk.join(', ') + '.' + (last.ok === false ? ' O antrenman haftaya sayılmadı.' : ''));
+  const pk = mains().filter(h => h.pn != null).slice(0, 2);
+  if (pk.length === 2 && pk.every(h => h.pn >= 6)) msg.push('Son iki antrenmanda rahatsızlık 6/10 ve üstü. Bu hafta yükü artırma, zorlanınca Kolaylaştır\'a bas; geçmezse doktora danış.');
   $('alert').textContent = msg.join(' ');
 }
 function plan() {
   $('plan').innerHTML = steps.map((s, j) => '<li data-j="' + j + '" class="' + (s.k === 'rest' ? 'rs ' : '') + (j < i ? 'done' : j === i ? 'cur' : '') + '"><span class="n">' + (j + 1) + '</span><span>' + esc(s.name) + ' <span class="next">· ' + esc(s.grp) + '</span>' + (skipped.has(j) ? ' <span class="x">atlandı</span>' : '') + '</span><span class="v">' + esc(s.k === 'work' ? s.det : fmt(s.sec)) + '</span></li>').join('');
 }
-function load() { stop(); week = getWeek(); if (!dayOk(day)) day = nextDay(); steps = build(day, week, short); i = -1; paused = false; skipped = new Set(); pulls = []; doneMsg = ''; started = 0; hideAsk(); $('after').hidden = true; show(); header(); settings(); library(); stats(); resumeBar() }
+function load() { stop(); week = getWeek(); if (!dayOk(day)) day = nextDay(); swaps = {}; steps = build(day, week, short); i = -1; paused = false; skipped = new Set(); pulls = []; doneMsg = ''; started = 0; hideAsk(); $('after').hidden = true; achInit(); show(); header(); settings(); library(); stats(); resumeBar(); weekSum() }
 function set(ph, cls, nm, dt, tp, af) { $('ph').textContent = ph; $('ph').className = 'phase' + (cls ? ' ' + cls : ''); $('nm').textContent = nm; $('dt').textContent = dt; $('tp').textContent = tp; $('af').textContent = af }
 function show() {
-  const s = steps[i]; $('pb').style.width = (i < 0 ? 0 : Math.min(100, i / steps.length * 100)) + '%';
+  const s = steps[i]; $('tv').style.fontSize = ''; $('pb').style.width = (i < 0 ? 0 : Math.min(100, i / steps.length * 100)) + '%';
   $('plus').hidden = !(s && s.k !== 'work');
   /* antrenman sürerken gün/hafta seçimi gizlenir, sayaç ve düğmeler tek ekrana sığar */
   document.documentElement.classList.toggle('run', running());
   $('bk').hidden = $('ps').hidden = $('sk').hidden = !running();
+  const ez = s && s.k !== 'rest' && EX[s.id] && EX[s.id].easy; $('ez').hidden = !(running() && ez && avail(ez));
   if (i >= steps.length) {
     const n = [...skipped].filter(j => steps[j].k !== 'rest').length;
     set('Bitti', '', 'Antrenman tamam', n ? n + ' hareket atlandı.' : 'Hiçbir hareketi atlamadın.', doneMsg, '');
@@ -198,7 +202,7 @@ function show() {
   set(s.k === 'rest' ? 'Dinlenme' : s.k === 'emom' ? 'EMOM' : s.grp, s.k === 'rest' ? 'rest' : '', s.name, s.k === 'rest' ? 'Nefes al, su iç.' : s.det + (s.k === 'emom' ? ' · ' + s.grp : ''), s.tip || '', n ? 'Sonra: ' + n.name + (n.k === 'work' ? ' (' + n.det + ')' : '') : 'Son adım');
   $('go').textContent = s.k === 'work' ? 'Tamam, sonraki' : 'Bitti, geç'; $('ps').textContent = paused ? 'Devam' : 'Duraklat';
   if (s.k === 'rest' && n) { $('tag').textContent = 'Sıradaki: ' + n.name; anim(n.id) } else { $('tag').textContent = ''; anim(s.id) }
-  if (s.k === 'work') { const d = s.det.split(' '); $('tv').textContent = d[0]; $('tl').textContent = d.slice(1).join(' ') || 'tekrar'; arc(1) }
+  if (s.k === 'work') { const d = s.det.split(' '); $('tv').textContent = d[0]; if (d[0].length > 3) $('tv').style.fontSize = '.7em'; $('tl').textContent = d.slice(1).join(' ') || 'tekrar'; arc(1) }
   else if (prepUntil) { $('ph').textContent = 'Hazırlan'; $('tl').textContent = 'hazırlan'; $('tv').textContent = prepLeft; arc(prepLeft / PREP) }
   else { $('tl').textContent = s.k === 'rest' ? 'dinlen' : 'kalan'; $('tv').textContent = fmt(left); arc(total ? left / total : 0) }
   plan();
@@ -218,7 +222,8 @@ function tick() {
   left = r; $('tv').textContent = fmt(left); arc(total ? left / total : 0);
   const s = steps[i];
   if (left === 10 && s && s.k === 'rest') say('On saniye');
-  if (left <= 3 && left > 0) beep(660, 120);
+  else if (s && s.k === 'time' && total >= 20 && left === Math.floor(total / 2)) say('Yarısı geçti');
+  if (left <= 3 && left > 0) { beep(660, 120); say(['', 'Bir', 'İki', 'Üç'][left]) }
   if (left <= 0) catchUp();
 }
 /* Ekran kilitliyken süreli adımlar geçtiyse aradaki adımları atla değil, tamamlanmış say ve doğru yerden devam et. */
@@ -229,11 +234,12 @@ function catchUp() {
 }
 function announce(s) {
   const n = steps[i + 1];
-  if (s.k === 'rest') say('Dinlen. ' + s.sec + ' saniye. Sıradaki ' + (n ? n.name : ''));
-  else if (s.k === 'work') say(s.name + '. ' + spoken(s.det));
-  else say((prepUntil ? 'Hazırlan. ' : '') + s.name + '. ' + (s.k === 'emom' ? spoken(s.det) : s.sec + ' saniye'));
+  const p = steps[i - 1], sw = p && p.id === s.id && p.side && s.side && p.side !== s.side ? 'Taraf değiştir. ' : '';
+  if (s.k === 'rest') say('Dinlen. ' + s.sec + ' saniye.' + (n ? ' Sıradaki ' + n.name + (n.k === 'work' ? ', ' + spoken(n.det) : '') + '.' : ''));
+  else if (s.k === 'work') say(sw + s.name + '. ' + spoken(s.det));
+  else say(sw + (prepUntil && !sw ? 'Hazırlan. ' : '') + s.name + '. ' + (s.k === 'emom' ? spoken(s.det) : s.sec + ' saniye'));
 }
-const saveSess = () => write(SKEY(), { day, week, q: short, i, sk: [...skipped], pulls, started, at: Date.now() });
+const saveSess = () => write(SKEY(), { day, week, q: short, i, sk: [...skipped], pulls, started, sw: swaps, at: Date.now() });
 const clearSess = () => drop(SKEY());
 function go(j, over) {
   stop(); hideAsk(); i = j;
@@ -241,8 +247,9 @@ function go(j, over) {
   if (i >= steps.length) { finish(); show(); renderLog(); header(); stats(); return }
   const s = steps[i];
   if (s.k !== 'work') {
-    const pr = !over && needPrep(i) ? PREP : 0, now = Date.now();
-    total = s.sec; end = now + (s.sec + pr) * 1000 - (over || 0); prepUntil = pr ? now + pr * 1000 : 0; prepLeft = pr;
+    /* süre kendiliğinden bitince birkaç yüz ms gecikme olur; bu hazırlığı engellemesin. Ekran kilitliyken uzun gecikmede hazırlık atlanır. */
+    const late = over || 0, pr = late < 1500 && needPrep(i) ? PREP : 0, now = Date.now();
+    total = s.sec; end = now + (s.sec + pr) * 1000 - (pr ? 0 : late); prepUntil = pr ? now + pr * 1000 : 0; prepLeft = pr;
     left = pr ? s.sec : Math.max(0, Math.ceil((end - now) / 1000)); beep(s.k === 'rest' ? 440 : pr ? 520 : 880, 250); timer = setInterval(tick, 200)
   }
   else beep(880, 150);
@@ -252,6 +259,7 @@ function finish() {
   const work = steps.filter(s => s.k !== 'rest').length, list = [...skipped].map(j => steps[j]).filter(x => x.k !== 'rest'), n = list.length;
   const sk = [...new Set(list.map(x => x.name))];
   doneMsg = '';
+  const best0 = S.pull.best || 0;
   if (pulls.length >= 3) {
     const tgt = S.pull.L === 0 ? 5 : S.pull.L, hits = pulls.filter(x => x >= tgt).length;
     if (S.pull.L > 0) S.pull.best = Math.max(S.pull.best, ...pulls);
@@ -259,12 +267,12 @@ function finish() {
     else if (hits < pulls.length / 2) { S.pull.fails++; if (S.pull.fails >= 2 && S.pull.L > 0) { S.pull.L--; S.pull.fails = 0; doneMsg = 'Barfiks seviyesi bir indi, acele yok: ' + pullText(false) + '.' } else doneMsg = 'Barfikste hedef tutmadı, aynı seviyede devam.' }
     else doneMsg = 'Barfikste aynı seviyede devam: ' + pullText(false) + '.';
   }
-  const min = Math.max(1, Math.round((Date.now() - (started || Date.now())) / 60000));
-  S.hist.unshift({ d: day, w: week, q: short || undefined, t: Date.now(), min, sk, ns: n, ok: n / work <= .25, pu: pulls.length ? pulls : undefined, lv: PR.pull ? S.pull.L : undefined });
-  S.hist = S.hist.slice(0, 500); save(); clearSess();
-  lastT = S.hist[0].t; afterCard([...new Set(steps.filter((x, j) => !skipped.has(j) && x.k !== 'rest' && tunable(x.id, x.grp)).map(x => x.id))]);
+  const min = Math.max(1, Math.round((Date.now() - (started || Date.now())) / 60000)), ez = Object.keys(swaps).filter(k => avail(swaps[k])).map(k => EX[k].name + ' → ' + EX[swaps[k]].name);
+  S.hist.unshift({ d: day, w: week, q: short || undefined, t: Date.now(), min, sk, ns: n, ok: n / work <= .25, pu: pulls.length ? pulls : undefined, lv: PR.pull ? S.pull.L : undefined, ez: ez.length ? ez : undefined });
+  S.hist = S.hist.slice(0, 500); const won = achCheck(); if (S.pull.L > 0 && best0 && S.pull.best > best0) won.unshift(['Yeni barfiks rekoru', S.pull.best + ' tam tekrar']); save(); clearSess();
+  lastT = S.hist[0].t; cele(won); afterCard([...new Set(steps.filter((x, j) => !skipped.has(j) && x.k !== 'rest' && tunable(x.id, x.grp)).map(x => x.id))]);
   doneMsg = (doneMsg ? doneMsg + ' ' : '') + min + ' dakika sürdü.';
-  beep(880, 300); setTimeout(() => beep(1100, 500), 320); vib([80, 60, 160]); say('Antrenman tamam. Eline sağlık.'); wake(false);
+  beep(880, 300); setTimeout(() => beep(1100, 500), 320); vib([80, 60, 160]); say('Antrenman tamam. Eline sağlık.' + (won.length ? ' Tebrikler, ' + won[0][0] + '!' : '')); wake(false);
 }
 function resumeBar() {
   const s = read(SKEY(), null);
@@ -274,26 +282,32 @@ function resumeBar() {
 }
 $('resgo').onclick = () => {
   const s = read(SKEY(), null); if (!s) return;
-  day = s.day; stop(); week = s.week; short = !!s.q; steps = build(day, week, short); skipped = new Set(s.sk); pulls = s.pulls || []; started = s.started || Date.now(); doneMsg = ''; paused = false;
+  day = s.day; stop(); week = s.week; short = !!s.q; swaps = s.sw || {}; steps = build(day, week, short, swaps); skipped = new Set(s.sk); pulls = s.pulls || []; started = s.started || Date.now(); doneMsg = ''; paused = false;
   header(); wake(true); go(Math.min(s.i, steps.length - 1)); $('clock').scrollIntoView({ block: 'start', behavior: 'smooth' });
 };
 $('resno').onclick = () => { clearSess(); $('resume').hidden = true };
+$('wsumx').onclick = () => { S.sumSeen = monday(Date.now()); save(); $('wsum').hidden = true };
 
 /* ---------- geçmiş ve istatistik ---------- */
 let delArm = -1;
 function renderLog() {
-  $('log').innerHTML = S.hist.length ? S.hist.slice(0, 30).map((h, k) => '<li><span>' + new Date(h.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'short' }) + ' — ' + esc(P.DAYS[h.d] ? (P.DAYS[h.d].extra ? P.DAYS[h.d].title : h.d + ' günü') : h.d) + ', hafta ' + h.w + (h.q ? ', kısa' : '') + (h.min ? ', ' + h.min + ' dk' : '') + (h.pu ? ', barfiks: ' + h.pu.join('-') : '') + (h.ns ? ', ' + h.ns + ' hareket atlandı' : '') + (h.ph ? ', 📷' : '') + (h.ok === false ? ' (haftaya sayılmadı)' : '') + '</span><button class="del" data-k="' + k + '">' + (delArm === k ? 'Silinsin mi?' : 'Sil') + '</button></li>').join('') : '<li><span>Henüz kayıt yok. İlk antrenmanı bitirince burada görünür.</span></li>';
+  $('log').innerHTML = S.hist.length ? S.hist.slice(0, 30).map((h, k) => '<li><span>' + new Date(h.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'short' }) + ' — ' + esc(P.DAYS[h.d] ? (P.DAYS[h.d].extra ? P.DAYS[h.d].title : h.d + ' günü') : h.d) + ', hafta ' + h.w + (h.q ? ', kısa' : '') + (h.min ? ', ' + h.min + ' dk' : '') + (h.pu ? ', barfiks: ' + h.pu.join('-') : '') + (h.ns ? ', ' + h.ns + ' hareket atlandı' : '') + (h.ez ? ', kolaylaştırıldı: ' + h.ez.join(', ') : '') + (h.pn != null ? ', rahatsızlık ' + h.pn + '/10' : '') + (h.ph ? ', 📷' : '') + (h.ok === false ? ' (haftaya sayılmadı)' : '') + '</span><button class="del" data-k="' + k + '">' + (delArm === k ? 'Silinsin mi?' : 'Sil') + '</button></li>').join('') : '<li><span>Henüz kayıt yok. İlk antrenmanı bitirince burada görünür.</span></li>';
 }
 $('log').addEventListener('click', e => {
   const b = e.target.closest('button.del'); if (!b) return; const k = +b.dataset.k;
   if (delArm !== k) { delArm = k; renderLog(); return }
   S.delT = (S.delT || []).concat(S.hist[k].t); S.hist.splice(k, 1); delArm = -1; save(); renderLog(); header(); stats();
 });
+/* seri: haftada en az (gün sayısı - 1) antrenman yapılan ardışık haftalar; bu hafta henüz dolmadıysa bozmaz */
+function streakW() {
+  const wk = monday(Date.now()), need = Math.max(1, rot().length - 1), c = n => { const a = wk - n * 7 * DAY; return S.hist.filter(h => h.t >= a && h.t < a + 7 * DAY).length };
+  let st = c(0) >= need ? 1 : 0; for (let n = 1; n < 104; n++) { if (c(n) >= need) st++; else break } return st;
+}
+const totalMin = () => S.hist.reduce((a, h) => a + (h.min || 0), 0);
 function stats() {
   const r = rot(), now = Date.now(), wk = monday(now), weeks = [];
   for (let n = 7; n >= 0; n--) { const a = wk - n * 7 * DAY, b = a + 7 * DAY; weeks.push({ a, c: S.hist.filter(h => h.t >= a && h.t < b).length }) }
-  const thisW = weeks[7].c, mins = S.hist.reduce((a, h) => a + (h.min || 0), 0), need = Math.max(1, r.length - 1);
-  let streak = thisW >= need ? 1 : 0; for (let n = 6; n >= 0; n--) { if (weeks[n].c >= need) streak++; else break }
+  const thisW = weeks[7].c, mins = totalMin(), streak = streakW();
   const max = Math.max(r.length, ...weeks.map(x => x.c));
   $('kpi').innerHTML = [['Bu hafta', thisW + ' / ' + r.length], ['Toplam', S.hist.length + ' antrenman'], ['Süre', (mins >= 60 ? Math.floor(mins / 60) + ' sa ' : '') + (mins % 60) + ' dk'], ['Seri', streak + ' hafta']].concat(PR.pull ? [['Barfiks', pullText(false) + (S.pull.best ? ' · en iyi ' + S.pull.best : '')]] : []).map(x => '<div><span>' + x[0] + '</span><b>' + esc(x[1]) + '</b></div>').join('');
   $('weeks').innerHTML = weeks.map(x => '<div class="wkrow"><span>' + new Date(x.a).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + '</span><i><em style="width:' + (x.c / max * 100) + '%"></em></i><b>' + x.c + '</b></div>').join('');
@@ -301,6 +315,56 @@ function stats() {
   const ph = PR.pull ? S.hist.filter(h => h.pu && h.pu.length).slice(0, 10) : [], pm = Math.max(1, ...ph.map(h => h.pu.reduce((a, b) => a + b, 0)));
   $('pullw').hidden = !ph.length;
   $('pullh').innerHTML = ph.map(h => { const t = h.pu.reduce((a, b) => a + b, 0); return '<div class="wkrow pr"><span>' + new Date(h.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + '</span><i><em style="width:' + (t / pm * 100) + '%"></em></i><b>' + t + '</b><small>setler: ' + h.pu.join(' · ') + '</small></div>' }).join('');
+  heat(); painChart(); badges();
+}
+/* ısı haritası: son 13 haftanın her günü bir kare, renk o günkü antrenman sayısı */
+function heat() {
+  const end = monday(Date.now()) + 7 * DAY, st = end - 13 * 7 * DAY, cnt = {}, td = new Date().setHours(0, 0, 0, 0);
+  S.hist.forEach(h => { if (h.t >= st) { const d = new Date(h.t).setHours(0, 0, 0, 0); cnt[d] = (cnt[d] || 0) + 1 } });
+  let html = '', n = 0;
+  for (let t = st; t < end; t += DAY) { const d = new Date(t).setHours(0, 0, 0, 0), c = cnt[d] || 0; if (c) n++; html += '<i class="' + (d > td ? 'f' : c > 1 ? 'c2' : c ? 'c1' : '') + (d === td ? ' td' : '') + '" title="' + new Date(d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) + (c ? ': ' + c + ' antrenman' : '') + '"></i>' }
+  $('heat').innerHTML = html; $('heatmsg').textContent = 'Son 3 ayda ' + n + ' gün antrenman.';
+}
+/* rahatsızlık (0–10): antrenman sonunda sorulur, son 12 kayıt gösterilir */
+const painLv = v => v >= 7 ? 'hi' : v >= 4 ? 'md' : 'lo';
+function painChart() {
+  const ps = S.hist.filter(h => h.pn != null).slice(0, 12);
+  $('painw').hidden = !ps.length; if (!ps.length) return;
+  $('painh').innerHTML = ps.map(h => '<div class="wkrow"><span>' + new Date(h.t).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + '</span><i><em class="' + painLv(h.pn) + '" style="width:' + Math.max(4, h.pn * 10) + '%"></em></i><b>' + h.pn + '</b></div>').join('');
+  const avg = a => a.reduce((x, h) => x + h.pn, 0) / a.length, a = ps.slice(0, 3), b = ps.slice(3, 6);
+  $('painmsg').textContent = avg(a) <= 2.5 ? 'Son üç antrenmanda düşük, iyi gidiyor.' : !b.length ? '' : avg(a) > avg(b) + .5 ? 'Son üç antrenmanda artıyor; yükü artırma, gerekirse Kolaylaştır\'a bas.' : avg(a) < avg(b) - .5 ? 'Son üç antrenmanda azalıyor.' : 'Son üç antrenmanda aynı seviyede.';
+}
+/* rozetler: ilk kez olan anlar; bir kez kazanılır */
+const ACH = [
+  ['n1', 'İlk antrenman', () => S.hist.length >= 1], ['n5', '5 antrenman', () => S.hist.length >= 5], ['n10', '10 antrenman', () => S.hist.length >= 10],
+  ['n25', '25 antrenman', () => S.hist.length >= 25], ['n50', '50 antrenman', () => S.hist.length >= 50], ['n100', '100 antrenman', () => S.hist.length >= 100],
+  ['s2', '2 hafta seri', () => streakW() >= 2], ['s4', '4 hafta seri', () => streakW() >= 4], ['s8', '8 hafta seri', () => streakW() >= 8], ['s12', '12 hafta seri', () => streakW() >= 12],
+  ['h5', '5 saat antrenman', () => totalMin() >= 300], ['h20', '20 saat antrenman', () => totalMin() >= 1200],
+  ['p1', 'İlk tam barfiks', () => PR.pull && S.pull.L >= 1], ['p5', '5 tam barfiks', () => PR.pull && S.pull.L >= 5], ['p10', '10 tam barfiks', () => PR.pull && S.pull.L >= 10]
+];
+function achCheck() { S.ach = S.ach || {}; const won = []; ACH.forEach(([k, t, f]) => { if (!S.ach[k] && f()) { S.ach[k] = Date.now(); won.push([t, '']) } }); return won }
+/* güncellemeden önce kazanılmış olanlar kutlanmadan eklenir */
+function achInit() { if (S.ach) return; S.ach = {}; ACH.forEach(([k, t, f]) => { if (f()) S.ach[k] = 1 }); save() }
+function badges() {
+  const list = ACH.filter(([k, , f]) => PR.pull || k[0] !== 'p');
+  $('ach').innerHTML = list.map(([k, t]) => { const v = S.ach && S.ach[k]; return '<div class="' + (v ? 'on' : '') + '"><span aria-hidden="true">' + (v ? '★' : '☆') + '</span><b>' + esc(t) + '</b><small>' + (v ? (v > 1 ? new Date(v).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' }) : 'kazanıldı') : 'henüz değil') + '</small></div>' }).join('');
+  $('achmsg').textContent = (S.ach ? Object.keys(S.ach).filter(k => list.some(x => x[0] === k)).length : 0) + ' / ' + list.length + ' rozet.';
+}
+function cele(won) {
+  $('cele').hidden = !won.length; if (!won.length) return;
+  $('celet').textContent = won.length > 1 ? won.length + ' yeni başarı' : won[0][0];
+  $('celel').innerHTML = won.map(w => '<li>' + esc(w[0]) + (w[1] ? ' · ' + esc(w[1]) : '') + '</li>').join('');
+  $('cele').classList.remove('go'); void $('cele').offsetWidth; $('cele').classList.add('go');
+}
+/* haftalık özet: yeni haftanın ilk açılışında geçen hafta */
+function weekSum() {
+  const mw = monday(Date.now()), pw = mw - 7 * DAY, ppw = pw - 7 * DAY, h = S.hist.filter(x => x.t >= pw && x.t < mw), hp = S.hist.filter(x => x.t >= ppw && x.t < pw);
+  if (!h.length || S.sumSeen === mw) { $('wsum').hidden = true; return }
+  const m = h.reduce((a, x) => a + (x.min || 0), 0), pn = h.filter(x => x.pn != null), d = h.length - hp.length, last = h.find(x => x.lv != null);
+  $('wsumt').textContent = 'Geçen hafta: ' + h.length + ' / ' + rot().length + ' antrenman' + (hp.length ? ' (' + (d > 0 ? '+' + d : d === 0 ? 'aynı' : d) + ')' : '') + ' · ' + m + ' dk'
+    + (pn.length ? ' · rahatsızlık ort. ' + (pn.reduce((a, x) => a + x.pn, 0) / pn.length).toFixed(1) : '')
+    + (PR.pull && last ? ' · barfiks: ' + (last.lv === 0 ? 'negatif' : last.lv + ' tam') : '') + '. ' + (h.length >= rot().length ? 'Hedef tamam, eline sağlık.' : h.length >= rot().length - 1 ? 'Seri devam ediyor.' : 'Bu hafta bir gün daha eklemeyi dene.');
+  $('wsum').hidden = false;
 }
 
 /* ---------- hareket kütüphanesi ---------- */
@@ -412,11 +476,13 @@ $('bld').onclick = () => restore($('btx').value);
 /* ---------- antrenman sonu: zorluk + fotoğraf ---------- */
 let fbBase = {}, pick1 = null;
 const FB = [[1, 'Kolay'], [0, 'İyi'], [-1, 'Zor']];
-const nextVal = id => { const st = build(day, week, false).find(x => x.id === id && tunable(x.id, x.grp)); return st ? (st.k === 'work' || st.k === 'emom' ? st.det : fmt(st.sec)) : '' };
+const nextVal = id => { const st = build(day, week, false, swaps).find(x => x.id === id && tunable(x.id, x.grp)); return st ? (st.k === 'work' || st.k === 'emom' ? st.det : fmt(st.sec)) : '' };
 function afterCard(ids) {
   fbBase = {}; ids.forEach(id => fbBase[id] = lvl(id)); pick1 = null;
   $('fbl').innerHTML = ids.map(id => '<li data-id="' + id + '"><span><b>' + esc(EX[id].name) + '</b><small></small></span><span class="row">' + FB.map(([d, t]) => '<button data-d="' + d + '" aria-pressed="false">' + t + '</button>').join('') + '</span></li>').join('');
   $('fbw').hidden = !ids.length; fbRefresh();
+  $('pnq').textContent = PR.ankle ? 'Ayak bileğin nasıl?' : 'Ağrı ya da rahatsızlık var mı?'; $('pnmsg').textContent = '';
+  $('pn').innerHTML = Array.from({ length: 11 }, (_, n) => '<button data-n="' + n + '" class="' + painLv(n) + '" aria-pressed="false">' + n + '</button>').join('');
   $('phprev').hidden = true; $('phsave').hidden = true; $('phmsg').textContent = ''; $('phin').value = '';
   $('phbox').hidden = !SY.enabled;
   $('after').hidden = false;
@@ -453,6 +519,12 @@ $('phsave').onclick = async () => {
   clearTimeout(slow); $('phsave').disabled = false;
 };
 $('afterx').onclick = () => { $('after').hidden = true };
+$('pn').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return; const n = +b.dataset.n, h = S.hist.find(x => x.t === lastT); if (!h) return;
+  h.pn = n; save(); renderLog(); header(); stats();
+  $('pn').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  $('pnmsg').textContent = n >= 7 ? 'Yüksek. Keskin ağrı ya da bir gecede inmeyen şişlik olursa o hareketleri bırak ve doktora sor.' : n >= 4 ? 'Orta. Sonraki antrenmanda zorlanan harekette Kolaylaştır\'a bas.' : 'Kaydedildi.';
+});
 
 /* galeri (İlerleme sekmesi) — fotoğraflar cihaza kaydedilmez, açılınca hesaptan okunur */
 let gal = null, galShow = 12, pvId = '', pvArm = 0;
@@ -492,6 +564,11 @@ $('go').onclick = () => {
   paused = false;
   if (steps[i] && steps[i].ask && $('ask').hidden) { askPull(); return }
   go(i + 1); if (i === 0) $('clock').scrollIntoView({ block: 'start', behavior: 'smooth' });
+};
+$('ez').onclick = () => {
+  if (!running()) return; const id = steps[i].id, e = EX[id] && EX[id].easy; if (!e || !avail(e)) return;
+  swaps[id] = e; steps = build(day, week, short, swaps); paused = false; go(i);
+  $('alert').textContent = EX[id].name + ' bu antrenman boyunca ' + EX[e].name + ' ile değişti.';
 };
 $('sk').onclick = () => { if (!running()) return; skipped.add(i); paused = false; go(i + 1) };
 $('bk').onclick = () => { if (i > 0) { skipped.delete(i - 1); if (steps[i - 1].ask && pulls.length) pulls.pop(); paused = false; go(i - 1) } };

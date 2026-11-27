@@ -9,3 +9,4 @@ cp tools/smoke.html t_smoke.html
 python3 -m http.server 8765 >/dev/null 2>&1 & S=$!; trap 'kill $S 2>/dev/null; rm -rf "$T"' EXIT; sleep 1
 node tools/cdp.mjs http://localhost:8765/t_smoke.html 15000 | tee /tmp/antrenman-test.txt
 ! grep -q '^FAIL\|^EXC\|^ERR' /tmp/antrenman-test.txt
+N=$(grep -c '^OK' /tmp/antrenman-test.txt); [ "$N" -ge 18 ] || { echo "FAIL sadece $N kontrol geçti"; exit 1; }

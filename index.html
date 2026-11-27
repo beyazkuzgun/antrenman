@@ -194,6 +194,38 @@ html.run .clock{margin-top:8px;scroll-margin-top:8px}
 .lxc h2{margin:14px 0 4px;font-size:26px}.lxc .tip{font-size:16px}
 #lxx{background:var(--fill);color:var(--acc)}
 @media(min-width:600px){.lx{align-items:center}.lxc{border-radius:24px}.lxc::before{display:none}}
+
+/* antrenman sonu: rahatsızlık, kutlama; ilerleme: ısı haritası, rozetler */
+.pain{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:4px}
+.pain button{min-height:40px;padding:0;border-radius:10px;font:600 15px var(--sfr);color:var(--ink)}
+.pain button[aria-pressed=true].lo{background:var(--green);color:#fff}.pain button[aria-pressed=true].md{background:var(--accgb);color:#fff}.pain button[aria-pressed=true].hi{background:var(--red);color:#fff}
+.wkrow em.lo{background:var(--green)}.wkrow em.md{background:var(--accg)}.wkrow em.hi{background:var(--red)}
+.cele{position:relative;text-align:center;padding:18px 8px 4px;overflow:hidden}
+.cele .medal{display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--accg);color:#fff;font-size:34px;box-shadow:0 8px 24px var(--accline)}
+.cele h2{margin:10px 0 4px}.cele ul{list-style:none;margin:0;padding:0;color:var(--mut);font-size:15px}
+.cele.go .medal{animation:pop .6s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{0%{transform:scale(.2);opacity:0}100%{transform:scale(1);opacity:1}}
+.conf{position:absolute;inset:0;pointer-events:none}
+.conf i{position:absolute;top:44px;left:50%;width:8px;height:12px;border-radius:2px;background:var(--acc);opacity:0}
+.conf i:nth-child(3n){background:var(--acc2)}.conf i:nth-child(4n){background:var(--blue)}.conf i:nth-child(5n){background:var(--green)}
+.cele.go .conf i{animation:conf 1.4s ease-out forwards}
+.conf i:nth-child(1){--x:-120px;--y:-30px;--r:200deg}.conf i:nth-child(2){--x:110px;--y:-40px;--r:-160deg}.conf i:nth-child(3){--x:-80px;--y:60px;--r:120deg}.conf i:nth-child(4){--x:90px;--y:70px;--r:-220deg}
+.conf i:nth-child(5){--x:-150px;--y:20px;--r:300deg}.conf i:nth-child(6){--x:150px;--y:10px;--r:-300deg}.conf i:nth-child(7){--x:-40px;--y:-50px;--r:90deg}.conf i:nth-child(8){--x:50px;--y:-55px;--r:-90deg}
+.conf i:nth-child(9){--x:-110px;--y:90px;--r:240deg}.conf i:nth-child(10){--x:120px;--y:95px;--r:-240deg}.conf i:nth-child(11){--x:-20px;--y:100px;--r:180deg}.conf i:nth-child(12){--x:25px;--y:-70px;--r:-180deg}
+@keyframes conf{0%{opacity:1;transform:translate(-50%,0) rotate(0)}100%{opacity:0;transform:translate(calc(-50% + var(--x)),var(--y)) rotate(var(--r))}}
+@media(prefers-reduced-motion:reduce){.cele.go .medal,.cele.go .conf i{animation:none}}
+.heatw{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;background:var(--card);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow)}
+.heatd{display:grid;grid-template-rows:repeat(7,1fr);gap:3px;font-size:10px;color:var(--mut);line-height:1}.heatd span{display:flex;align-items:center}
+.heat{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:3px}
+.heat i{aspect-ratio:1;border-radius:4px;background:var(--fill)}
+.heat i.c1{background:color-mix(in srgb,var(--acc) 55%,var(--acc2))}.heat i.c2{background:var(--acc)}.heat i.f{background:none}.heat i.td{outline:1.5px solid var(--acc);outline-offset:-1.5px}
+.ach{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.ach div{background:var(--card);border-radius:16px;padding:12px 8px;text-align:center;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:2px;opacity:.45}
+.ach div.on{opacity:1}.ach span{font-size:26px;line-height:1;color:var(--far)}.ach .on span{background:var(--accg);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ach b{font-size:13px;line-height:1.2}.ach small{font-size:11px;color:var(--mut)}
+.banner.sum{border-left:4px solid var(--acc)}
+.ezb{position:absolute;top:10px;right:12px;min-height:32px;padding:0 12px;font-size:14px;border-radius:99px;color:var(--acc);background:color-mix(in srgb,var(--card) 80%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.ezb[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -201,6 +233,7 @@ html.run .clock{margin-top:8px;scroll-margin-top:8px}
   <div class="top"><h1 id="ttl">Antrenman</h1><div class="row prof" id="prof" role="group" aria-label="Kişi seç"></div></div>
   <p class="alert" id="alert"></p>
   <div class="banner" id="upd" hidden><span>Uygulamanın yeni sürümü hazır.</span><button id="updgo">Yenile</button></div>
+  <div class="banner sum runhide" id="wsum" hidden><span id="wsumt"></span><button id="wsumx">Tamam</button></div>
   <div class="banner" id="resume" hidden><span id="resmsg"></span><span class="row"><button id="resgo">Devam et</button><button id="resno">Sil</button></span></div>
 
 
@@ -215,7 +248,7 @@ html.run .clock{margin-top:8px;scroll-margin-top:8px}
   </div>
   <p class="next runhide" id="nextinfo"></p>
   <section class="clock" id="clock" aria-live="polite">
-    <div class="stage"><svg id="fig" viewBox="0 0 200 140" aria-hidden="true"></svg><span class="tag" id="tag"></span></div>
+    <div class="stage"><svg id="fig" viewBox="0 0 200 140" aria-hidden="true"></svg><span class="tag" id="tag"></span><button id="ez" class="ezb" hidden>Kolaylaştır</button></div>
     <div class="bar"><i id="pb"></i></div>
     <div class="body">
       <div class="ring">
@@ -241,6 +274,8 @@ html.run .clock{margin-top:8px;scroll-margin-top:8px}
   </section>
 
   <section class="fin" id="after" hidden aria-label="Antrenman sonu">
+    <div class="cele" id="cele" hidden><div class="conf" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="medal" aria-hidden="true">★</span><h2 id="celet"></h2><ul id="celel"></ul></div>
+    <div id="pnw"><h2 id="pnq">Ağrı ya da rahatsızlık var mı?</h2><p class="next">0 = hiç yok, 10 = çok. Zamanla nasıl değiştiğini İlerleme'de görürsün.</p><div class="pain" id="pn" role="group" aria-label="Rahatsızlık 0-10"></div><p class="next" id="pnmsg"></p></div>
     <div id="fbw"><h2>Nasıl geçti?</h2><p class="next">İstersen işaretle, sonraki sefer sayılar buna göre ayarlanır. Boş bırakırsan değişmez.</p><ul class="fbl" id="fbl"></ul></div>
     <div id="phbox"><h2>Fotoğraf (isteğe bağlı)</h2>
       <p class="next">Antrenman sonrası halini kaydet, zamanla farkı gör. Sadece senin hesabında durur, kimse göremez; konum gibi gizli bilgiler silinir.</p>
@@ -256,7 +291,19 @@ html.run .clock{margin-top:8px;scroll-margin-top:8px}
   <section class="view" data-v="ilerleme" aria-label="İlerleme" hidden>
   <h2>İlerleme</h2>
   <div class="kpi" id="kpi"></div>
+  <h2>Son 3 ay</h2>
+  <div class="heatw"><div class="heatd" aria-hidden="true"><span>Pzt</span><span></span><span>Çar</span><span></span><span>Cum</span><span></span><span>Paz</span></div><div class="heat" id="heat" role="img" aria-label="Son 3 ayın antrenman günleri"></div></div>
+  <p class="next" id="heatmsg"></p>
+
+  <h2>Haftalar</h2>
   <div class="weeks" id="weeks" aria-label="Son 8 hafta"></div>
+
+  <div id="painw" hidden><h2>Rahatsızlık</h2>
+  <p class="next">Antrenman sonunda verdiğin puan, 0–10.</p>
+  <div class="weeks" id="painh"></div><p class="next" id="painmsg"></p></div>
+
+  <h2>Rozetler</h2>
+  <div class="ach" id="ach"></div><p class="next" id="achmsg"></p>
 
   <div id="pullw" hidden><h2>Barfiks geçmişi</h2>
   <p class="next">Son 10 antrenman. Çubuk o günkü toplam tekrar.</p>

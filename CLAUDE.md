@@ -10,6 +10,10 @@ Sesli ev antrenmanı sayacı (PWA). GitHub Pages: https://beyazkuzgun.github.io/
 - Giriş zorunlu (`#gate`). Cihazda başka hesabın verisi varsa (`antrenman.owner`) yeni hesaba girişte yerel veri silinir. Fotoğraflar cihaza ve yedeğe yazılmaz; tarayıcıda yeniden çizilerek EXIF/konum silinir.
 - Zorluk geri bildirimi: `S.adj[hareket]` (-3..+4, seviye başı ~%15); ısınma, soğuma, ayak bileği, barfiks ve boks ayarlanmaz.
 - `index.html` — görünüm; 4 sekme: antrenman, ilerleme, hareketler, ayarlar.
+- Tasarım: iOS dili, renkler sadece `:root` değişkenlerinden. `--acc`/`--acc2` turuncu vurgu ve gradyanı, `--red` sadece silme gibi yıkıcı işler, `--blue` dinlenme.
+- Kolay versiyon: `program.js` `EASY` (hareket → daha hafifi); antrenmanda "Kolaylaştır" o antrenman boyunca değiştirir, `hist[].ez`'ye yazılır.
+- Antrenman sonu: rahatsızlık 0–10 (`hist[].pn`), rozetler (`S.ach`, liste `app.js` `ACH`), haftalık özet (`S.sumSeen`).
+- `.github/workflows/test.yml` — her gönderimde `tools/test.sh` GitHub'da çalışır; bozulursa e-posta gelir (yayını durdurmaz).
 - `sw.js` — çevrimdışı; dosya değişince `VERSION`'u artır, yeni dosya eklenince `FILES`'a ekle.
 
 ## Pozlar
@@ -21,9 +25,9 @@ Nokta harfleri: H baş, N omuz, M sırt ortası, P kalça, E/W yakın dirsek/el,
 - Public repo: kişisel sağlık detayı yazma, genel ifade kullan.
 
 ## Test ve yayın
-- `tools/test.sh` — JS sözdizimi + sahte hesapla (`tools/fake-sync.js`) uçtan uca duman testi; hepsi OK olmadan yayınlama.
+- `tools/test.sh` — (Node 22 + Chrome gerekir; bu Mac'te Node yok, GitHub'da çalışır) JS sözdizimi + sahte hesapla (`tools/fake-sync.js`) uçtan uca duman testi; hepsi OK olmadan yayınlama.
 - `node tools/cdp.mjs URL [ms] [ekran.png]` — headless Chrome'da sayfayı açar, sonucu/hataları yazar, istenirse ekran görüntüsü alır.
-- Commit yazarı: beyazkuzgun <wmbaram@gmail.com>. `main`'e push → Pages ~1 dk. `sw.js` VERSION'u her yayında artır.
+- Commit yazarı: beyazkuzgun <wmbaram@gmail.com>. `main`'e push → Pages ~1 dk. Bu Mac'te terminalden push yok: GitHub Desktop'ın kopyası `~/Documents/GitHub/antrenman`; commit'i oraya `git pull --ff-only ~/antrenman main` ile aktar, kullanıcı Push origin'e basar. `sw.js` VERSION'u her yayında artır.
 - Ayrıntılı adımlar: `.claude/skills/antrenman-guncelle/SKILL.md`.
 
 ## Çalışma şekli

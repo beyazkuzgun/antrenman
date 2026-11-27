@@ -129,6 +129,12 @@ const EX = {
   bridge2:{ name: 'Glute bridge', tip: 'İki ayak yerde, kalçayı sık, tepede 1 sn bekle', anim: 'bridge2', eq: 'mat' }
 };
 
+/* KOLAY VERSİYON: antrenman sırasında "Kolaylaştır"a basınca o hareket, o antrenman boyunca bununla değişir.
+   Sadece programda zaten olan, daha hafif ve ayak bileğini zorlamayan hareketler. */
+const EASY = { push: 'kneepush', dia: 'kneepush', pike: 'kneepush', touch: 'kneetouch', hollow: 'hollowk', knee: 'legr', legr: 'bug', sup: 'birddog',
+  side: 'plank', bridge1: 'bridge2', squat: 'bridge2', revlunge: 'bridge2', kbswing: 'kbdl', goblet: 'kbdl', kbpress: 'kbhold' };
+for (const k in EASY) EX[k].easy = EASY[k];
+
 const WARM  = [{ ex: 'circ', sec: 40 }, { ex: 'cat', sec: 40 }, { ex: 'shadow', sec: 30 }, { ex: 'hang', sec: 20 }];
 const ANKLE = [{ ex: 'alpha', sec: 60 }, { ex: 'towel', sec: 60 }, { ex: 'calf', reps: '15 tekrar' }, { rest: 30 }, { ex: 'calf', reps: '15 tekrar' }, { rest: 30 }, { ex: 'calf', reps: '15 tekrar' }];
 const COOL  = [{ ex: 'child', sec: 40 }, { ex: 'chest', sec: 30, side: 'sağ' }, { ex: 'chest', sec: 30, side: 'sol' }, { ex: 'cross', sec: 30, side: 'sağ' }, { ex: 'cross', sec: 30, side: 'sol' }, { ex: 'ham', sec: 30, side: 'sağ' }, { ex: 'ham', sec: 30, side: 'sol' }, { ex: 'fig4', sec: 30, side: 'sağ' }, { ex: 'fig4', sec: 30, side: 'sol' }];

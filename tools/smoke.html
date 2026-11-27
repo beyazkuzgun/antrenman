@@ -10,9 +10,11 @@ f.onload=async()=>{if(once++)return;try{const d=f.contentDocument,$=id=>d.getEle
  q('#whob button[data-p=nur]').click(); await w(200);
  $('go').click(); await w(50); ok(d.documentElement.classList.contains('run')&&getComputedStyle($('tabs')).display==='none','antrenman sürerken gün seçimi gizli');
  ok($('ph').textContent==='Hazırlan'&&$('tl').textContent==='hazırlan','süreli hareketten önce hazırlık: '+$('ph').textContent+' '+$('tv').textContent);
- for(let k=0;k<300&&$('ph').textContent!=='Bitti';k++){ if(!$('ask').hidden) q('#askb button').click(); else $('go').click(); await w(2) }
+ let ez=0;for(let k=0;k<300&&$('ph').textContent!=='Bitti';k++){ if(!ez&&/lunge/.test($('nm').textContent)){ ok(!$('ez').hidden,'Kolaylaştır düğmesi görünüyor'); $('ez').click(); await w(20); ez=1; ok(/Glute bridge/.test($('nm').textContent),'Kolaylaştır: '+$('nm').textContent) } if(!$('ask').hidden) q('#askb button').click(); else $('go').click(); await w(2) }
  ok(!$('after').hidden&&d.querySelectorAll('#fbl li').length>0,'antrenman sonu kartı');
  ok(/^Sıradaki: N2/.test($('go').textContent)&&$('sk').hidden,'bitince sıradaki gün düğmesi: '+$('go').textContent);
+ ok(!$('cele').hidden&&/İlk antrenman/.test($('celet').textContent),'ilk antrenman kutlaması: '+$('celet').textContent);
+ q('#pn button[data-n="3"]').click(); await w(50); ok(/rahatsızlık 3\/10/.test($('log').textContent),'rahatsızlık kaydı');
  const before=q('#fbl li[data-id=squat] small').textContent; q('#fbl li[data-id=squat] button[data-d="1"]').click(); await w(50);
  ok(q('#fbl li[data-id=squat] small').textContent!==before,'Kolay seçince sonraki sayı değişiyor ('+before+' → '+q('#fbl li[data-id=squat] small').textContent+')');
  const c=document.createElement('canvas');c.width=2000;c.height=2600;const x=c.getContext('2d');for(let i=0;i<2600;i+=40){x.fillStyle='hsl('+i%360+',70%,50%)';x.fillRect(0,i,2000,40)}
@@ -20,6 +22,8 @@ f.onload=async()=>{if(once++)return;try{const d=f.contentDocument,$=id=>d.getEle
  $('phin').files=dt.files;$('phin').dispatchEvent(new Event('change'));await w(2000); ok(!$('phprev').hidden,'fotoğraf önizleme');
  $('phsave').click(); await w(300); ok(/kaydedildi/.test($('phmsg').textContent),'fotoğraf kaydı: '+$('phmsg').textContent+' boyut='+f.contentWindow.T_SIZES);
  q('#tabbar button[data-v=ilerleme]').click(); await w(300); ok(d.querySelectorAll('#gal button').length===1,'galeride 1 fotoğraf');
+ ok(d.querySelectorAll('#heat i').length===91&&d.querySelectorAll('#heat i.c1,#heat i.c2').length===1,'ısı haritası: 91 gün, 1 dolu');
+ ok(!$('painw').hidden&&d.querySelectorAll('#ach div.on').length===1,'rahatsızlık grafiği ve 1 rozet');
  q('#gal button').click(); await w(200); $('pvdel').click(); $('pvdel').click(); await w(300); ok(d.querySelectorAll('#gal button').length===0,'fotoğraf silindi');
  q('#tabbar button[data-v=hareketler]').click(); await w(50); q('#lib button').click(); await w(100); ok(!$('lx').hidden&&!$('lxfig').innerHTML.indexOf('<')&&vis(d,'[data-v=hareketler]'),'hareket kartı yerinde açılıyor: '+$('lxn').textContent); $('lxx').click();
  q('#tabbar button[data-v=antrenman]').click(); $('go').click(); await w(50); q('#qk').click(); await w(50); ok(/kısa/.test($('dt').textContent),'Vaktim az: '+$('dt').textContent);

@@ -1,0 +1,18 @@
+# Her gönderimde duman testini GitHub'da çalıştırır. Bozulursa GitHub e-posta ile haber verir ve
+# Actions sekmesinde kırmızı çarpı görünür. (Site yayını bundan bağımsızdır; Pages yine yayınlar.)
+name: Test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Duman testi
+        run: CHROME="$(command -v google-chrome || command -v chromium)" tools/test.sh

@@ -39,6 +39,10 @@ GitHub Pages: Settings → Pages → Branch: `main`, klasör `/ (root)`. Adres: 
 - "Vaktim az" düğmesi: devre/dakika sayısı yarıya iner, ısınma ve ayak bileği rutini aynı kalır, soğuma kısalır; sırayı ilerletir, haftaya yarım sayılır.
 - Yarım kalan antrenman 6 saat içinde kaldığı adımdan devam ettirilebilir.
 - İstatistik: bu hafta, toplam, süre, seri, son 8 hafta; barfiks seviyesi ve en iyisi.
+- Süreli hareketten önce 5 sn hazırlık; sesli koç: yarısı geçti, üç-iki-bir, taraf değiştir, dinlenmede sıradaki hareket ve sayısı.
+- Kolaylaştır: zorlanılan hareketi o antrenman için daha hafif bir hareketle değiştirir.
+- Antrenman sonu rahatsızlık puanı (0–10), ilerlemede grafiği; iki kez üst üste yüksekse uyarı.
+- İlerleme: son 3 ay ısı haritası, barfiks geçmişi, rozetler; yeni haftada geçen haftanın özeti.
 - Geçmişten yanlış kaydı silme, dinlenmeye +15 sn, hareket kütüphanesi (önizleme), takvim hatırlatıcısı (.ics), yeni sürüm bildirimi.
 
 ## Hesap ve eşitleme
