@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><body><pre id=o></pre><script>
+/* Uçtan uca duman testi: sahte hesapla giriş → N1 bitir → zorluk → fotoğraf → galeri → sil → çıkış. tools/test.sh çalıştırır. */
+localStorage.clear(); localStorage.setItem('T_UID','u1');
+const f=document.createElement('iframe');f.style.cssText='width:390px;height:844px';f.src='/t_index.html';document.body.appendChild(f);
+const out=[];const ok=(c,t)=>out.push((c?'OK   ':'FAIL ')+t);const w=ms=>new Promise(r=>setTimeout(r,ms));let once=0;
+const vis=(d,s)=>getComputedStyle(d.querySelector(s)).display!=='none';
+f.onload=async()=>{if(once++)return;try{const d=f.contentDocument,$=id=>d.getElementById(id),q=s=>d.querySelector(s);
+ await w(300); ok(vis(d,'#gate')&&!vis(d,'.wrap'),'giriş ekranı açılışta, içerik gizli');
+ $('glogin').click(); await w(300); ok(!vis(d,'#gate')&&!$('who').hidden,'girişten sonra profil seçimi');
+ q('#whob button[data-p=nur]').click(); await w(200);
+ for(let k=0;k<300&&$('go').textContent!=='Baştan';k++){ if(!$('ask').hidden) q('#askb button').click(); else $('go').click(); await w(2) }
+ ok(!$('after').hidden&&d.querySelectorAll('#fbl li').length>0,'antrenman sonu kartı');
+ const before=q('#fbl li[data-id=squat] small').textContent; q('#fbl li[data-id=squat] button[data-d="1"]').click(); await w(50);
+ ok(q('#fbl li[data-id=squat] small').textContent!==before,'Kolay seçince sonraki sayı değişiyor ('+before+' → '+q('#fbl li[data-id=squat] small').textContent+')');
+ const c=document.createElement('canvas');c.width=2000;c.height=2600;const x=c.getContext('2d');for(let i=0;i<2600;i+=40){x.fillStyle='hsl('+i%360+',70%,50%)';x.fillRect(0,i,2000,40)}
+ const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.95));const dt=new f.contentWindow.DataTransfer();dt.items.add(new f.contentWindow.File([blob],'a.jpg',{type:'image/jpeg'}));
+ $('phin').files=dt.files;$('phin').dispatchEvent(new Event('change'));await w(2000); ok(!$('phprev').hidden,'fotoğraf önizleme');
+ $('phsave').click(); await w(300); ok(/kaydedildi/.test($('phmsg').textContent),'fotoğraf kaydı: '+$('phmsg').textContent+' boyut='+f.contentWindow.T_SIZES);
+ q('#tabbar button[data-v=ilerleme]').click(); await w(300); ok(d.querySelectorAll('#gal button').length===1,'galeride 1 fotoğraf');
+ q('#gal button').click(); await w(200); $('pvdel').click(); $('pvdel').click(); await w(300); ok(d.querySelectorAll('#gal button').length===0,'fotoğraf silindi');
+ q('#tabbar button[data-v=antrenman]').click(); q('#qk').click(); await w(50); ok(/kısa/.test($('dt').textContent),'Vaktim az: '+$('dt').textContent);
+ q('#tabbar button[data-v=ayarlar]').click(); $('aclogout').click(); await w(300); ok(vis(d,'#gate')&&!vis(d,'.wrap'),'çıkışta içerik gizli');
+}catch(e){out.push('FAIL hata: '+e.message)} document.getElementById('o').textContent=out.join('\n')};
+</script>

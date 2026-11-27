@@ -21,4 +21,10 @@ Nokta harfleri: H baş, N omuz, M sırt ortası, P kalça, E/W yakın dirsek/el,
 - Public repo: kişisel sağlık detayı yazma, genel ifade kullan.
 
 ## Test ve yayın
-`python3 -m http.server` + headless Chrome ile `--dump-dom` konsol testi. Commit yazarı: beyazkuzgun <wmbaram@gmail.com>. `git push` sonrası Pages ~1 dk.
+- `tools/test.sh` — JS sözdizimi + sahte hesapla (`tools/fake-sync.js`) uçtan uca duman testi; hepsi OK olmadan yayınlama.
+- `node tools/cdp.mjs URL [ms] [ekran.png]` — headless Chrome'da sayfayı açar, sonucu/hataları yazar, istenirse ekran görüntüsü alır.
+- Commit yazarı: beyazkuzgun <wmbaram@gmail.com>. `main`'e push → Pages ~1 dk. `sw.js` VERSION'u her yayında artır.
+- Ayrıntılı adımlar: `.claude/skills/antrenman-guncelle/SKILL.md`.
+
+## Çalışma şekli
+Kullanıcı Baran; teknik ekip yok. Türkçe konuş, sıradaki adımı sen öner. Firebase konsolu gibi giriş gerektiren adımlarda şifre girme; kullanıcıdan girişi yapmasını iste.
