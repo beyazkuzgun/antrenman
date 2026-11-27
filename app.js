@@ -49,11 +49,11 @@ const POSES = {}; for (const k in P.POSES) POSES[k] = { ...P.POSES[k], p: P.POSE
 const G = 'stroke="var(--line)" stroke-width="2"';
 const PROPS = {
   bar: '<line x1="58" y1="22" x2="142" y2="22" stroke="var(--mut)" stroke-width="4" stroke-linecap="round"/><line x1="58" y1="22" x2="58" y2="0" ' + G + '/><line x1="142" y1="22" x2="142" y2="0" ' + G + '/>',
-  floor: '<rect x="30" y="130" width="160" height="4" rx="2" fill="var(--redsoft)"/><line x1="0" y1="131" x2="200" y2="131" ' + G + '/>',
-  chair: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><path d="M76 56V131M76 95H104M102 95V131" stroke="var(--mut)" stroke-width="3" fill="none"/><rect x="110" y="126" width="44" height="4" rx="2" fill="var(--red)"/>',
+  floor: '<rect x="30" y="130" width="160" height="4" rx="2" fill="var(--accsoft)"/><line x1="0" y1="131" x2="200" y2="131" ' + G + '/>',
+  chair: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><path d="M76 56V131M76 95H104M102 95V131" stroke="var(--mut)" stroke-width="3" fill="none"/><rect x="110" y="126" width="44" height="4" rx="2" fill="var(--acc)"/>',
   wall: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="131" y1="0" x2="131" y2="131" stroke="var(--mut)" stroke-width="4"/>',
   wallL: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="69" y1="0" x2="69" y2="131" stroke="var(--mut)" stroke-width="4"/>',
-  bag: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="162" y1="0" x2="162" y2="16" stroke="var(--mut)" stroke-width="2"/><rect x="152" y="16" width="20" height="82" rx="8" fill="var(--red)" opacity=".85"/>'
+  bag: '<line x1="0" y1="131" x2="200" y2="131" ' + G + '/><line x1="162" y1="0" x2="162" y2="16" stroke="var(--mut)" stroke-width="2"/><rect x="152" y="16" width="20" height="82" rx="8" fill="var(--acc)" opacity=".85"/>'
 };
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let cur = null, t0 = 0, raf = 0;
@@ -62,7 +62,7 @@ function poseSvg(p, pr) {
   const M = p.M || [(p.N[0] + p.P[0]) / 2, (p.N[1] + p.P[1]) / 2], far = 'var(--far)';
   let kb = '';
   if (p.B) kb = '<circle cx="' + p.B[0].toFixed(1) + '" cy="' + (p.B[1] + 2).toFixed(1) + '" r="7" fill="var(--mut)"/><circle cx="' + p.B[0].toFixed(1) + '" cy="' + (p.B[1] - 6).toFixed(1) + '" r="3.5" fill="none" stroke="var(--mut)" stroke-width="2.5"/>';
-  return (PROPS[pr] || PROPS.floor) + L(p.N, p.e, far) + L(p.e, p.w, far) + L(p.P, p.k, far) + L(p.k, p.f, far) + L(p.f, p.t, far) + L(p.N, M) + L(M, p.P) + L(p.N, p.E) + L(p.E, p.W) + kb + L(p.P, p.K) + L(p.K, p.F) + L(p.F, p.T) + '<circle cx="' + p.H[0].toFixed(1) + '" cy="' + p.H[1].toFixed(1) + '" r="8.5" fill="var(--red)"/>';
+  return (PROPS[pr] || PROPS.floor) + L(p.N, p.e, far) + L(p.e, p.w, far) + L(p.P, p.k, far) + L(p.k, p.f, far) + L(p.f, p.t, far) + L(p.N, M) + L(M, p.P) + L(p.N, p.E) + L(p.E, p.W) + kb + L(p.P, p.K) + L(p.K, p.F) + L(p.F, p.T) + '<circle cx="' + p.H[0].toFixed(1) + '" cy="' + p.H[1].toFixed(1) + '" r="8.5" fill="var(--acc)"/>';
 }
 function frame(ts) {
   if (!cur) return;
