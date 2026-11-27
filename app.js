@@ -319,7 +319,7 @@ function lxOpen(id) {
   if (!a) { $('lxfig').innerHTML = PROPS.floor; return }
   const st = performance.now(), n = a.p.length;
   const f = ts => { if ($('lx').hidden) return; const el = Math.max(0, ts - st) / 1000 / a.d, j = Math.floor(el) % n, e = .5 - .5 * Math.cos(Math.PI * (el % 1)); $('lxfig').innerHTML = poseSvg(mix(a.p[j], a.p[(j + 1) % n], e), a.pr); lxRaf = requestAnimationFrame(f) };
-  if (reduce) $('lxfig').innerHTML = poseSvg(a.p[0], a.pr); else lxRaf = requestAnimationFrame(f);
+  $('lxfig').innerHTML = poseSvg(a.p[0], a.pr); if (!reduce) lxRaf = requestAnimationFrame(f);
 }
 const lxClose = () => { $('lx').hidden = true; cancelAnimationFrame(lxRaf) };
 $('lib').addEventListener('click', e => { const b = e.target.closest('button'); if (b) lxOpen(b.dataset.id) });
@@ -517,6 +517,7 @@ const VIEWS = ['antrenman', 'ilerleme', 'hareketler', 'ayarlar'];
 function showView(v, push) {
   if (!VIEWS.includes(v)) v = 'antrenman';
   document.querySelectorAll('.view').forEach(x => x.hidden = x.dataset.v !== v);
+  $('ttl').textContent = { antrenman: 'Antrenman', ilerleme: 'İlerleme', hareketler: 'Hareketler', ayarlar: 'Ayarlar' }[v];
   document.querySelectorAll('#tabbar button').forEach(b => b.dataset.v === v ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   if (push && location.hash !== '#' + v) history.replaceState(null, '', '#' + v);
   write('antrenman.view', v); window.scrollTo(0, 0); if (v === 'ilerleme') gallery();
