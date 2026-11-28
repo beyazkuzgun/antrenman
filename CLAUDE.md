@@ -9,11 +9,12 @@ Sesli ev antrenmanı sayacı (PWA). GitHub Pages: https://beyazkuzgun.github.io/
 - `firestore.rules` — güvenlik kuralları; değişince Firebase konsolu → Firestore → Kurallar'a yapıştırılıp yayınlanır.
 - Giriş zorunlu (`#gate`). Cihazda başka hesabın verisi varsa (`antrenman.owner`) yeni hesaba girişte yerel veri silinir. Fotoğraflar cihaza ve yedeğe yazılmaz; tarayıcıda yeniden çizilerek EXIF/konum silinir.
 - Zorluk geri bildirimi: `S.adj[hareket]` (-3..+4, seviye başı ~%15); ısınma, soğuma, ayak bileği, barfiks ve boks ayarlanmaz.
-- `index.html` — görünüm; 4 sekme: antrenman, ilerleme, hareketler, ayarlar.
+- `index.html` — görünüm; 5 sekme: antrenman, beslenme, ilerleme, hareketler, ayarlar.
 - Tasarım: iOS dili, renkler sadece `:root` değişkenlerinden. `--acc`/`--acc2` turuncu vurgu ve gradyanı, `--red` sadece silme gibi yıkıcı işler, `--blue` dinlenme.
 - Kolay versiyon: `program.js` `EASY` (hareket → daha hafifi); antrenmanda "Kolaylaştır" o antrenman boyunca değiştirir, `hist[].ez`'ye yazılır.
 - Antrenman sonu: rahatsızlık 0–10 (`hist[].pn`), rozetler (`S.ach`, liste `app.js` `ACH`), haftalık özet (`S.sumSeen`).
 - `.github/workflows/test.yml` — her gönderimde `tools/test.sh` GitHub'da çalışır; bozulursa e-posta gelir (yayını durdurmaz).
+- `coach.js` — beslenme + kişisel koç (Beslenme sekmesi, antrenman sekmesindeki koç kartı). Veri `S.nut` (prof, days{tarih:{it,wa,sl}}, w tartı, adj, log, custom); `mergeState` gün gün birleştirir. Hedef: Mifflin-St Jeor × antrenman sıklığı ± hedef; koç haftada bir kilo gidişatı + kalori uyumuna göre `adj`'yi kendisi değiştirir ve `log`'a yazar. Yiyecek listesi `FOODS`.
 - `sw.js` — çevrimdışı; dosya değişince `VERSION`'u artır, yeni dosya eklenince `FILES`'a ekle.
 
 ## Pozlar

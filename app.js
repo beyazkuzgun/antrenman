@@ -184,7 +184,7 @@ function header() {
 function plan() {
   $('plan').innerHTML = steps.map((s, j) => '<li data-j="' + j + '" class="' + (s.k === 'rest' ? 'rs ' : '') + (j < i ? 'done' : j === i ? 'cur' : '') + '"><span class="n">' + (j + 1) + '</span><span>' + esc(s.name) + ' <span class="next">· ' + esc(s.grp) + '</span>' + (skipped.has(j) ? ' <span class="x">atlandı</span>' : '') + '</span><span class="v">' + esc(s.k === 'work' ? s.det : fmt(s.sec)) + '</span></li>').join('');
 }
-function load() { stop(); week = getWeek(); if (!dayOk(day)) day = nextDay(); swaps = {}; steps = build(day, week, short); i = -1; paused = false; skipped = new Set(); pulls = []; doneMsg = ''; started = 0; hideAsk(); $('after').hidden = true; achInit(); show(); header(); settings(); library(); stats(); resumeBar(); weekSum() }
+function load() { stop(); week = getWeek(); if (!dayOk(day)) day = nextDay(); swaps = {}; steps = build(day, week, short); i = -1; paused = false; skipped = new Set(); pulls = []; doneMsg = ''; started = 0; hideAsk(); $('after').hidden = true; achInit(); show(); header(); settings(); library(); stats(); resumeBar(); weekSum(); if (window.COACH) COACH.render() }
 function set(ph, cls, nm, dt, tp, af) { $('ph').textContent = ph; $('ph').className = 'phase' + (cls ? ' ' + cls : ''); $('nm').textContent = nm; $('dt').textContent = dt; $('tp').textContent = tp; $('af').textContent = af }
 function show() {
   const s = steps[i]; $('tv').style.fontSize = ''; $('pb').style.width = (i < 0 ? 0 : Math.min(100, i / steps.length * 100)) + '%';
@@ -594,14 +594,14 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 $('updgo').onclick = () => location.reload();
 
 /* ---------- sekmeler ---------- */
-const VIEWS = ['antrenman', 'ilerleme', 'hareketler', 'ayarlar'];
+const VIEWS = ['antrenman', 'beslenme', 'ilerleme', 'hareketler', 'ayarlar'];
 function showView(v, push) {
   if (!VIEWS.includes(v)) v = 'antrenman';
   document.querySelectorAll('.view').forEach(x => x.hidden = x.dataset.v !== v);
-  $('ttl').textContent = { antrenman: 'Antrenman', ilerleme: 'İlerleme', hareketler: 'Hareketler', ayarlar: 'Ayarlar' }[v];
+  $('ttl').textContent = { antrenman: 'Antrenman', beslenme: 'Beslenme ve koç', ilerleme: 'İlerleme', hareketler: 'Hareketler', ayarlar: 'Ayarlar' }[v];
   document.querySelectorAll('#tabbar button').forEach(b => b.dataset.v === v ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   if (push && location.hash !== '#' + v) history.replaceState(null, '', '#' + v);
-  write('antrenman.view', v); window.scrollTo(0, 0); if (v === 'ilerleme') gallery();
+  write('antrenman.view', v); window.scrollTo(0, 0); if (v === 'ilerleme') gallery(); if (v === 'beslenme' && window.COACH) COACH.render();
 }
 $('tabbar').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showView(b.dataset.v, true) });
 window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
@@ -613,7 +613,7 @@ function mergeState(a, b) {
   if (!a) return b; if (!b) return a;
   const n = (a.mod || 0) >= (b.mod || 0) ? a : b, o = n === a ? b : a, del = new Set([...(a.delT || []), ...(b.delT || [])]), seen = new Map();
   [...a.hist, ...b.hist].forEach(h => { if (!del.has(h.t) && !seen.has(h.t)) seen.set(h.t, h) });
-  return { ...n, hist: [...seen.values()].sort((x, y) => y.t - x.t).slice(0, 500), delT: [...del].slice(-500), pull: { ...n.pull, best: Math.max(a.pull ? a.pull.best || 0 : 0, b.pull ? b.pull.best || 0 : 0) } };
+  return { ...n, nut: window.COACH ? COACH.merge(a.nut, b.nut, n.nut) : n.nut, hist: [...seen.values()].sort((x, y) => y.t - x.t).slice(0, 500), delT: [...del].slice(-500), pull: { ...n.pull, best: Math.max(a.pull ? a.pull.best || 0 : 0, b.pull ? b.pull.best || 0 : 0) } };
 }
 function merge(l, r) {
   if (!r) return l;
@@ -679,6 +679,7 @@ if (SY.enabled) {
 }
 acct();
 
+if (window.COACH) COACH.init({ S: () => S, save, perWeek: () => rot().length, mains, hist: () => S.hist, next: () => dayName(nextDay()), go: v => showView(v, true) });
 renderLog(); load(); if (firstRun && (!SY.enabled || read('antrenman.uid', null))) { whoDone = true; who() }
 try {
   if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude|claudeusercontent/.test(location.host)) navigator.serviceWorker.register('sw.js').then(reg => {

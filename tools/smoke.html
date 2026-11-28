@@ -26,6 +26,15 @@ f.onload=async()=>{if(once++)return;try{const d=f.contentDocument,$=id=>d.getEle
  ok(!$('painw').hidden&&d.querySelectorAll('#ach div.on').length===1,'rahatsızlık grafiği ve 1 rozet');
  q('#gal button').click(); await w(200); $('pvdel').click(); $('pvdel').click(); await w(300); ok(d.querySelectorAll('#gal button').length===0,'fotoğraf silindi');
  q('#tabbar button[data-v=hareketler]').click(); await w(50); q('#lib button').click(); await w(100); ok(!$('lx').hidden&&!$('lxfig').innerHTML.indexOf('<')&&vis(d,'[data-v=hareketler]'),'hareket kartı yerinde açılıyor: '+$('lxn').textContent); $('lxx').click();
+ q('#tabbar button[data-v=beslenme]').click(); await w(100); ok(vis(d,'[data-v=beslenme]')&&/Koçu kur/.test($('nut').textContent),'beslenme sekmesi ve kurulum mesajı');
+ $('pkg').value='70';$('pcm').value='178';$('page').value='25';$('pgoal').value='kas'; q('[data-a=psave]').click(); await w(100);
+ ok(/Günlük hedef: \d+ kcal, \d+ g protein/.test($('nut').textContent.replace(/\s+/g,' ')),'hedef hesaplandı: '+($('nut').textContent.match(/Günlük hedef: [^.]*/)||[''])[0]);
+ q('[data-a=add][data-f=egg]').click(); await w(50); q('[data-a=add][data-f=egg]').click(); await w(50); ok(/Yumurta ×2/.test($('nut').textContent),'yiyecek ekleme: 2 yumurta');
+ q('[data-a="wa+"]').click(); await w(30); const sl=q('[data-a=sl]'); sl.value='6'; sl.dispatchEvent(new Event('change',{bubbles:true})); await w(50);
+ ok(q('[data-a=sl]').value==='6'&&d.querySelectorAll('.nrow').length===4,'su ve uyku girişi');
+ ok(d.querySelectorAll('#nut .cm').length>0&&!/Koçu kur/.test($('nut').textContent),'koç önerileri: '+(q('#nut .cm')||{}).textContent);
+ const st=JSON.parse(f.contentWindow.localStorage.getItem('antrenman.v2.nur')); ok(st.nut&&st.nut.prof.kg===70&&Object.keys(st.nut.days).length===1,'beslenme kaydı saklandı');
+ q('#tabbar button[data-v=antrenman]').click(); await w(50); ok(!$('coachb').hidden&&$('coacht').textContent.length>5,'antrenman sekmesinde koç kartı: '+$('coacht').textContent.slice(0,60));
  q('#tabbar button[data-v=antrenman]').click(); $('go').click(); await w(50); q('#qk').click(); await w(50); ok(/kısa/.test($('dt').textContent),'Vaktim az: '+$('dt').textContent);
  q('#tabbar button[data-v=ayarlar]').click(); $('aclogout').click(); await w(300); ok(vis(d,'#gate')&&!vis(d,'.wrap'),'çıkışta içerik gizli');
 }catch(e){out.push('FAIL hata: '+e.message)} document.getElementById('o').textContent=out.join('\n')};
