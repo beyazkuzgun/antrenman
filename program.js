@@ -138,6 +138,7 @@ const EX = {
   facepull:{ name: 'Bantlı face pull', tip: 'Bandı göz hizasına bağla, ipi yüzüne çek, dirsekler yukarıda', anim: 'facepull', eq: 'band' },
   ringrow:{ name: 'Halkada row', tip: 'Gövde dümdüz, göğsü halkalara çek; ayakları ileri aldıkça zorlaşır', anim: 'ringrow', eq: 'rings' },
   dip:    { name: 'Dips', tip: 'Omuzlar aşağıda, dirsek 90 dereceye kadar in; gövde hafif öne', anim: 'dip', eq: 'dip' },
+  dbsquat:{ name: 'Dambıl goblet squat', tip: 'Tek dambılı göğüste dik tut, topuklar yerde, kalça geriye', anim: 'goblet', eq: 'db' },
   thrust: { name: 'Sehpada hip thrust', tip: 'Kürek kemikleri sehpa kenarında, kalçayı sık, tepede 1 sn bekle', anim: 'thrust', eq: 'bench' },
   dbthrust:{ name: 'Dambıllı hip thrust', tip: 'Dambıl kalçanın üstünde, iki elle tut; tepede kalçayı sık', anim: 'dbthrust', eq: ['db', 'bench'] },
   dbrdl:  { name: 'Dambıl Romanian deadlift', tip: 'Dizler hafif bükük, kalçayı geriye it, dambıllar bacağa yakın', anim: 'dbrdl', eq: 'db' },
@@ -203,10 +204,10 @@ const DAYS = {
   /* Nur — sadece yoga matı */
   N1: { title: 'Alt vücut + karın', blocks: [
     { type: 'circuit', rounds: byWeek({ 1: 3, 3: 4 }), rest: byWeek({ 1: 60, 3: 45 }), items: [
-      { ex: 'squat', reps: '12 tekrar' }, { ex: 'revlunge', reps: '10 + 10' }, { ex: 'bridge2', reps: '15 tekrar' }, { ex: 'bug', reps: '10 + 10' }, { ex: 'plank', sec: 30 }] }] },
+      { ex: 'squat', alt: 'dbsquat', reps: '12 tekrar' }, { ex: 'revlunge', reps: '10 + 10' }, { ex: 'bridge2', alt: 'thrust', reps: '15 tekrar' }, { ex: 'dbrdl', reps: '10–12 tekrar' }, { ex: 'bug', reps: '10 + 10' }, { ex: 'plank', sec: 30 }] }] },
   N2: { title: 'Üst vücut + karın', blocks: [
     { type: 'circuit', rounds: byWeek({ 1: 3, 3: 4 }), rest: byWeek({ 1: 60, 3: 45 }), items: [
-      { ex: 'kneepush', reps: '8–10 tekrar' }, { ex: 'sup', sec: 30 }, { ex: 'kneetouch', reps: '16 dokunuş' }, { ex: 'birddog', reps: '10 + 10' }, { ex: 'side', reps: '8 + 8' }] }] },
+      { ex: 'kneepush', reps: '8–10 tekrar' }, { ex: 'sup', alt: 'ringrow', sec: 30 }, { ex: 'dbrow', reps: '10 + 10' }, { ex: 'kneetouch', reps: '16 dokunuş' }, { ex: 'facepull', reps: '12–15 tekrar' }, { ex: 'birddog', reps: '10 + 10' }, { ex: 'side', reps: '8 + 8' }] }] },
   N3: { title: 'Akış + kondisyon', blocks: [
     { type: 'circuit', name: 'Akış', rounds: () => 2, rest: () => 30, items: [
       { ex: 'cat', sec: 40 }, { ex: 'dog', sec: 30 }, { ex: 'cobra', sec: 30 }, { ex: 'child', sec: 30 }] },
@@ -227,11 +228,13 @@ const TEMPLATES = {
       'Barfiks: A gününde her setten sonra kaç tekrar yaptığını gir. Bütün setlerde hedefi tutarsan seviye yükselir, iki antrenman üst üste tutmazsa bir iner.']
   },
   mat: {
-    name: 'Sadece yoga matı', days: ['N1', 'N2', 'N3'], equip: ['mat'], flags: [], warm: [{ ex: 'march', sec: 60 }, { ex: 'circ', sec: 40 }, { ex: 'cat', sec: 40 }], ankle: false, pull: false,
+    name: 'Yoga matı + isteğe bağlı ekipman', days: ['N1', 'N2', 'N3'], equip: ['mat', 'bench', 'db', 'band', 'rings'], eqOn: ['mat'], flags: [], warm: [{ ex: 'march', sec: 60 }, { ex: 'circ', sec: 40 }, { ex: 'cat', sec: 40 }], ankle: false, pull: false,
     rotation: () => ['N1', 'N2', 'N3'],
     notes: ['Haftada 3 gün, aralarda bir gün dinlen. Sıra: N1 – N2 – N3.',
       'Zorlanırsan tekrar sayısını azalt ya da dinlenmeyi uzat; formu bozmadan yapmak sayıdan önemli.',
-      'Eklemde ya da belde keskin ağrı olursa o hareketi atla.']
+      'Eklemde ya da belde keskin ağrı olursa o hareketi atla.',
+      'Ekipmanı Ayarlar\'dan açıp kapatabilirsin: sehpa, dambıl, direnç bandı, halka. Açınca ilgili hareketler programa kendiliğinden girer.',
+      'Dambılda 10–12 tekrarı zorlanarak bitirebildiğin ağırlığı seç.']
   }
 };
 

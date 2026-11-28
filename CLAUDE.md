@@ -21,7 +21,7 @@ Nokta harfleri: H baş, N omuz, M sırt ortası, P kalça, E/W yakın dirsek/el,
 
 ## Kurallar
 - Baran: sağ ayak bileği sakatlığı → zıplama, derin squat, lunge yok (ekipman şablonu). Swing/goblet sadece `cleared` bayrağıyla.
-- Nur: sadece mat şablonu.
+- Nur: mat şablonu; ekipman (sehpa, dambıl, bant, halka) isteğe bağlı, açıp kapatmak ona kalsın. Lunge serbest.
 - Public repo: kişisel sağlık detayı yazma, genel ifade kullan.
 
 ## Test ve yayın

@@ -25,7 +25,7 @@ saveProfs();
 /* ---------- kayıt ---------- */
 function defaults() {
   const eq = {}, flags = {};
-  for (const k in P.EQUIP) eq[k] = PR.equip.includes(k) && P.EQUIP[k].on;
+  for (const k in P.EQUIP) eq[k] = PR.equip.includes(k) && (PR.eqOn ? PR.eqOn.includes(k) : P.EQUIP[k].on);
   for (const k in P.FLAGS) flags[k] = P.FLAGS[k].on;
   return { hist: [], off: 0, pull: { L: 0, fails: 0, best: 0 }, cfg: { eq, flags, kbw: P.EQUIP.kb.weight, voice: true, beep: true, prep: true, rem: { days: [1, 3, 5, 6], time: '19:00' } } };
 }
